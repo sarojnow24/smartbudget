@@ -1,15 +1,23 @@
-const CACHE = 'smartbudget-v1';
-const FILES = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
+const CACHE_NAME = 'smartbajet-cache-v1';
+const urlsToCache = [
+  '/',                  // home page
+  '/index.html',        // your main HTML file
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png'
+];
 
-self.addEventListener('install', (evt) => {
-  evt.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES)));
-  self.skipWaiting();
+// Install service worker and cache files
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(urlsToCache))
+  );
 });
 
-self.addEventListener('activate', (evt) => {
-  evt.waitUntil(self.clients.claim());
-});
-
-self.addEventListener('fetch', (evt) => {
-  evt.respondWith(caches.match(evt.request).then(r => r || fetch(evt.request)));
+// Serve cached files when offline
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => response || fetch(event.request))
+  );
 });
