@@ -1,32 +1,20 @@
 {
-  "id": "/smartbudget",
-  "name": "SmartBudget Tracker",
-  "short_name": "SmartBudget",
-  "description": "Smart budget tracker for income, expenses, and reports.",
-  "start_url": "index.html",
-  "scope": "./",
+  "name": "SmartBajet",
+  "short_name": "SmartBajet",
+  "start_url": "/index.html",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#ffffff",
-  "theme_color": "#1976d2",
+  "theme_color": "#4CAF50",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icon-512.png",
+      "src": "icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
-  ],
-  "screenshots": [
-    {
-    "src": "screenshot1.png",
-    "sizes": "720x1280",
-    "type": "image/png"
-    }
   ]
 }
-
