@@ -285,21 +285,76 @@
   </nav>
 
 <script>
-let editTxId = null; // To track which transaction is being edited
+/* ====== Global Variables ====== */
+let categories = [];
+let budgets = [];
+let transactions = [];
+const today = new Date();
 
-/* Transaction chips */
+/* ====== Helper Functions ====== */
+function isoDate(d) { return d.toISOString().split('T')[0]; }
+function formatDateTime(dt) { return new Date(dt).toLocaleString(); }
+function formatCurrency(val) { return '$' + val.toFixed(2); }
+
+/* ====== Save / Load Helpers ====== */
+function saveAll() {
+    localStorage.setItem('categories', JSON.stringify(categories));
+    localStorage.setItem('budgets', JSON.stringify(budgets));
+    localStorage.setItem('transactions', JSON.stringify(transactions));
+}
+
+function loadAll() {
+    categories = JSON.parse(localStorage.getItem('categories') || '[]');
+    budgets = JSON.parse(localStorage.getItem('budgets') || '[]');
+    transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+}
+
+/* ====== Category & Budget Functions ====== */
+function addCategory(c) { 
+    c.id = c.id || (c.type+'-'+Date.now()); 
+    c.sub = c.sub || []; 
+    categories.push(c); 
+    saveAll(); 
+    renderSettings(); 
+}
+
+function addBudget(b) { 
+    b.id = b.id || 'b-'+Date.now(); 
+    budgets.push(b); 
+    saveAll(); 
+    renderSettings(); 
+}
+
+/* ====== Transaction Functions ====== */
+let currentEditId = null; // Holds ID if editing
+
+function addTransactionObj(tx) { 
+    if(currentEditId) {
+        // Update existing transaction
+        const idx = transactions.findIndex(t => t.id === currentEditId);
+        if(idx > -1) transactions[idx] = { ...transactions[idx], ...tx };
+        currentEditId = null;
+    } else {
+        tx.id = 'tx-'+Date.now(); 
+        transactions.push(tx); 
+    }
+    saveAll(); 
+    renderCurrentView(); 
+}
+
+/* ====== Transaction Chips ====== */
 function populateTxMainChips() {
-    const type = document.getElementById('txType').value;
-    const container = document.getElementById('txMainChips');
+    const type = document.getElementById('txType').value; 
+    const container = document.getElementById('txMainChips'); 
     container.innerHTML='';
     categories.filter(c=>c.type===type).forEach(c=>{
-        const chip = document.createElement('span');
-        chip.className='chip';
-        chip.textContent=c.name;
+        const chip = document.createElement('span'); 
+        chip.className='chip'; 
+        chip.textContent=c.name; 
         chip.dataset.name=c.name;
         chip.onclick = ()=>{
-            document.querySelectorAll('#txMainChips .chip').forEach(n=>n.classList.remove('active'));
-            chip.classList.add('active');
+            document.querySelectorAll('#txMainChips .chip').forEach(n=>n.classList.remove('active')); 
+            chip.classList.add('active'); 
             populateTxSubChips(c.name);
         };
         container.appendChild(chip);
@@ -308,39 +363,39 @@ function populateTxMainChips() {
 }
 
 function populateTxSubChips(mainName) {
-    const cat = categories.find(c=>c.name===mainName);
-    const container = document.getElementById('txSubChips');
+    const cat = categories.find(c=>c.name===mainName); 
+    const container = document.getElementById('txSubChips'); 
     container.innerHTML='';
     (cat.sub||[]).forEach(sub=>{
-        const chip = document.createElement('span');
-        chip.className='chip';
+        const chip = document.createElement('span'); 
+        chip.className='chip'; 
         chip.textContent=sub;
-        chip.onclick = ()=>{
-            document.querySelectorAll('#txSubChips .chip').forEach(n=>n.classList.remove('active'));
-            chip.classList.add('active');
+        chip.onclick = () => { 
+            document.querySelectorAll('#txSubChips .chip').forEach(n=>n.classList.remove('active')); 
+            chip.classList.add('active'); 
         };
         container.appendChild(chip);
     });
 }
 
-/* Reports */
+/* ====== Render Report ====== */
 function renderReport() {
     const from = document.getElementById('reportFrom').value ? new Date(document.getElementById('reportFrom').value+'T00:00:00') : new Date(0);
     const to = document.getElementById('reportTo').value ? new Date(document.getElementById('reportTo').value+'T23:59:59') : new Date();
     const type = document.getElementById('reportType').value;
     const filtered = transactions.filter(t=>{
-        const d = new Date(t.dateTime);
-        return d>=from && d<=to && (type==='all'?true:t.type===type);
+        const d = new Date(t.dateTime); 
+        return d>=from && d<=to && (type==='all'?true:t.type===type); 
     });
     const income = filtered.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
     const expense = filtered.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
     document.getElementById('reportIncome').textContent = formatCurrency(income);
     document.getElementById('reportExpense').textContent = formatCurrency(expense);
 
-    const list = document.getElementById('reportTxList');
+    const list = document.getElementById('reportTxList'); 
     list.innerHTML='';
     filtered.slice().sort((a,b)=>new Date(b.dateTime)-new Date(a.dateTime)).forEach(t=>{
-        const r = document.createElement('div');
+        const r = document.createElement('div'); 
         r.style.padding='8px 0';
         r.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;">
             <div>
@@ -350,124 +405,91 @@ function renderReport() {
             <div style="text-align:right">
                 ${formatCurrency(t.amount)}
                 <div class="small">${t.type.toUpperCase()}</div>
-                <button onclick="editTransaction('${t.id}')" style="margin-left:5px;">Edit</button>
-                <button onclick="deleteTransaction('${t.id}')" style="margin-left:5px;">Delete</button>
+                <button class="editTx" data-id="${t.id}">Edit</button>
+                <button class="delTx" data-id="${t.id}">Delete</button>
             </div>
         </div>`;
         list.appendChild(r);
     });
+
+    // Add edit/delete handlers
+    document.querySelectorAll('.editTx').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+            const id = btn.dataset.id;
+            const tx = transactions.find(t=>t.id===id);
+            if(!tx) return;
+            currentEditId = id;
+            document.getElementById('addForm').style.display='block';
+            document.getElementById('txType').value = tx.type;
+            populateTxMainChips();
+            document.querySelectorAll('#txMainChips .chip').forEach(c=>{ if(c.dataset.name===tx.mainCategory) c.classList.add('active'); });
+            populateTxSubChips(tx.mainCategory);
+            document.querySelectorAll('#txSubChips .chip').forEach(c=>{ if(c.textContent===tx.subCategory) c.classList.add('active'); });
+            document.getElementById('txAmount').value = tx.amount;
+            document.getElementById('txNote').value = tx.note || '';
+            const d = new Date(tx.dateTime);
+            document.getElementById('txDate').value = isoDate(d);
+            document.getElementById('txTime').value = d.toTimeString().slice(0,5);
+        });
+    });
+
+    document.querySelectorAll('.delTx').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+            const id = btn.dataset.id;
+            if(confirm('Delete this transaction?')) {
+                transactions = transactions.filter(t=>t.id!==id);
+                saveAll();
+                renderCurrentView();
+            }
+        });
+    });
+
     return { filtered, income, expense, from, to };
 }
 
-/* Export to XLSX */
+/* ====== Export to Excel ====== */
 function exportReportToExcel(dataObj) {
     const { filtered, income, expense, from, to } = dataObj;
     const wb = XLSX.utils.book_new();
-    const summary = [['Report From', isoDate(from)], ['Report To', isoDate(to)], ['Total Income', income], ['Total Expense', expense], ['Net Balance', income - expense]];
+    const summary = [[ 'Report From', isoDate(from) ],[ 'Report To', isoDate(to) ],[ 'Total Income', income ],[ 'Total Expense', expense ],[ 'Net Balance', income - expense ]];
     const ws1 = XLSX.utils.aoa_to_sheet(summary); XLSX.utils.book_append_sheet(wb, ws1, 'Summary');
     const rows = [['Date','Type','Category','Subcategory','Amount','Note']];
     filtered.forEach(t=> rows.push([ new Date(t.dateTime).toLocaleString(), t.type, t.mainCategory, t.subCategory, t.amount, t.note||'' ] ));
     const ws2 = XLSX.utils.aoa_to_sheet(rows); XLSX.utils.book_append_sheet(wb, ws2, 'Transactions');
-    const brows = [['Type','Categories','Amount','Start','End']]; budgets.forEach(b=> brows.push([b.type, b.categories?b.categories.join(','):'All', b.amount, b.startDate, b.endDate]));
+    const brows = [['Type','Categories','Amount','Start','End']];
+    budgets.forEach(b=> brows.push([b.type, b.categories?b.categories.join(','):'All', b.amount, b.startDate, b.endDate]));
     const ws3 = XLSX.utils.aoa_to_sheet(brows); XLSX.utils.book_append_sheet(wb, ws3, 'Budgets');
     const wbout = XLSX.write(wb, { bookType:'xlsx', type:'array' });
     const blob = new Blob([wbout], { type: 'application/octet-stream' });
     saveAs(blob, `smartbudget-report-${isoDate(from)}_to_${isoDate(to)}.xlsx`);
 }
 
-/* Add / save helpers */
-function addCategory(c) { c.id = (c.type+'-'+Date.now()); c.sub = c.sub || []; categories.push(c); saveAll(); renderSettings(); }
-function addBudget(b) { b.id = 'b-'+Date.now(); budgets.push(b); saveAll(); renderSettings(); }
-function addTransactionObj(tx) { tx.id='tx-'+Date.now(); transactions.push(tx); saveAll(); renderCurrentView(); }
-
-/* Delete transaction */
-function deleteTransaction(txId) {
-    if (confirm('Delete this transaction?')) {
-        transactions = transactions.filter(t=>t.id!==txId);
-        saveAll(); renderCurrentView();
-    }
+/* ====== Render Current Views ====== */
+function renderCurrentView() {
+    renderReport();
 }
 
-/* Edit Transaction Function */
-function editTransaction(txId) {
-    const tx = transactions.find(t => t.id === txId);
-    if (!tx) return;
-
-    editTxId = tx.id; // Enable edit mode
-
-    document.getElementById('addForm').style.display = 'block';
-    document.getElementById('txType').value = tx.type;
-    populateTxMainChips();
-
-    // Select main category chip
-    document.querySelectorAll('#txMainChips .chip').forEach(chip => {
-        if (chip.dataset.name === tx.mainCategory) chip.classList.add('active');
-    });
-    populateTxSubChips(tx.mainCategory);
-
-    // Select sub category chip
-    document.querySelectorAll('#txSubChips .chip').forEach(chip => {
-        if (chip.textContent === tx.subCategory) chip.classList.add('active');
-    });
-
-    document.getElementById('txAmount').value = tx.amount;
-    document.getElementById('txNote').value = tx.note || '';
-    const dt = new Date(tx.dateTime);
-    document.getElementById('txDate').value = isoDate(dt);
-    document.getElementById('txTime').value = dt.toTimeString().slice(0,5);
+/* ====== Show / Hide Views ====== */
+function showView(name) {
+    document.getElementById('dashboardView').style.display = name==='dashboard' ? '' : 'none';
+    document.getElementById('reportsView').style.display = name==='reports' ? '' : 'none';
+    document.getElementById('settingsView').style.display = name==='settings' ? '' : 'none';
+    if(name==='dashboard') renderDashboard('today');
+    if(name==='reports') renderReport();
+    if(name==='settings') renderSettings();
 }
 
-/* Save Transaction (Add or Edit) */
-document.getElementById('saveTx').addEventListener('click', ()=> {
-    const type = document.getElementById('txType').value;
-    const amount = parseFloat(document.getElementById('txAmount').value);
-    const main = Array.from(document.querySelectorAll('#txMainChips .chip.active')).map(n=>n.dataset.name)[0];
-    const sub = Array.from(document.querySelectorAll('#txSubChips .chip.active')).map(n=>n.textContent)[0];
-    const note = document.getElementById('txNote').value.trim();
-    const date = document.getElementById('txDate').value;
-    const time = document.getElementById('txTime').value || '00:00';
-
-    if (!main) { alert('Select main category'); return; }
-    if (!sub) { alert('Select subcategory'); return; }
-    if (!amount || amount <= 0) { alert('Enter valid amount'); return; }
-
-    const sel = new Date(date + 'T' + time + ':00');
-    const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(today.getDate()-7); sevenDaysAgo.setHours(0,0,0,0);
-
-    if (sel < sevenDaysAgo) { alert('You can only select dates up to 7 days in the past'); return; }
-    if (sel > new Date()) { alert('Cannot select future date'); return; }
-
-    if (editTxId) {
-        const txIndex = transactions.findIndex(t => t.id === editTxId);
-        if(txIndex !== -1){
-            transactions[txIndex] = { ...transactions[txIndex], type, mainCategory: main, subCategory: sub, amount, note, dateTime: sel.toISOString() };
-        }
-        editTxId = null;
-    } else {
-        const txId = 'tx-'+sel.getTime()+'-'+amount;
-        if (transactions.find(t=>t.id===txId)) { alert('This transaction is already saved!'); return; }
-        transactions.push({ id: txId, type, mainCategory: main, subCategory: sub, amount, note, dateTime: sel.toISOString() });
-    }
-
-    saveAll();
-    renderCurrentView();
-
-    // Clear & close form
-    document.getElementById('txAmount').value = '';
-    document.getElementById('txNote').value = '';
-    document.getElementById('txMainChips').innerHTML = '';
-    document.getElementById('txSubChips').innerHTML = '';
-    document.getElementById('addForm').style.display='none';
-});
-
-/* Event wiring and initial setup */
+/* ====== Document Ready ====== */
 document.addEventListener('DOMContentLoaded', ()=> {
+    loadAll();
+
     document.getElementById('reportTo').value = isoDate(today);
     const weekStart = new Date(); weekStart.setDate(today.getDate()-6);
     document.getElementById('reportFrom').value = isoDate(weekStart);
 
     document.querySelectorAll('.periodBtn').forEach(b=>b.addEventListener('click', (ev)=> renderDashboard(ev.currentTarget.dataset.period)));
     document.getElementById('openAdd').addEventListener('click', ()=> {
+        currentEditId = null;
         document.getElementById('addForm').style.display='block';
         const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate()-7);
         document.getElementById('txDate').min = isoDate(sevenDaysAgo);
@@ -479,13 +501,35 @@ document.addEventListener('DOMContentLoaded', ()=> {
     document.getElementById('closeForm').addEventListener('click', ()=> document.getElementById('addForm').style.display='none');
     document.getElementById('txType').addEventListener('change', populateTxMainChips);
 
+    document.getElementById('saveTx').addEventListener('click', ()=> {
+        const type = document.getElementById('txType').value;
+        const amount = parseFloat(document.getElementById('txAmount').value);
+        const main = Array.from(document.querySelectorAll('#txMainChips .chip.active')).map(n=>n.dataset.name)[0];
+        const sub = Array.from(document.querySelectorAll('#txSubChips .chip.active')).map(n=>n.textContent)[0];
+        const note = document.getElementById('txNote').value.trim();
+        const date = document.getElementById('txDate').value;
+        const time = document.getElementById('txTime').value || '00:00';
+
+        if (!main) { alert('Select main category'); return; }
+        if (!sub) { alert('Select subcategory'); return; }
+        if (!amount || amount <= 0) { alert('Enter valid amount'); return; }
+        const sel = new Date(date + 'T' + time + ':00');
+        const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate()-7); sevenDaysAgo.setHours(0,0,0,0);
+        if (sel < sevenDaysAgo) { alert('You can only select dates up to 7 days in the past'); return; }
+        if (sel > new Date()) { alert('Cannot select future date'); return; }
+
+        addTransactionObj({ type, mainCategory: main, subCategory: sub, amount, note, dateTime: sel.toISOString() });
+        document.getElementById('addForm').style.display='none';
+    });
+
     document.getElementById('addCategoryBtn').addEventListener('click', ()=> {
         const type = document.getElementById('newCatType').value;
         const name = document.getElementById('newCatName').value.trim();
         const subs = document.getElementById('newCatSubs').value.split(',').map(s=>s.trim()).filter(Boolean);
         if (!name) { alert('Enter category name'); return; }
         addCategory({ name, type, sub: subs });
-        document.getElementById('newCatName').value = ''; document.getElementById('newCatSubs').value = '';
+        document.getElementById('newCatName').value = ''; 
+        document.getElementById('newCatSubs').value = '';
     });
 
     document.getElementById('categoriesList').addEventListener('click', (e)=> {
@@ -515,6 +559,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     document.getElementById('downloadCsv').addEventListener('click', ()=> exportReportToExcel(renderReport()));
     document.getElementById('downloadPdf').addEventListener('click', ()=> alert('PDF export coming soon'));
 
+    /* Bottom nav handling */
     document.getElementById('bottomNav').addEventListener('click', (e)=> {
         const btn = e.target.closest('#bottomNav button');
         if (!btn) return;
@@ -523,25 +568,17 @@ document.addEventListener('DOMContentLoaded', ()=> {
         showView(btn.dataset.view);
     });
 
-    renderSettings(); renderDashboard('today');
+    renderSettings(); 
+    renderDashboard('today');
 });
 
-/* Show view function */
-function showView(name) {
-    document.getElementById('dashboardView').style.display = name==='dashboard' ? '' : 'none';
-    document.getElementById('reportsView').style.display = name==='reports' ? '' : 'none';
-    document.getElementById('settingsView').style.display = name==='settings' ? '' : 'none';
-    if (name==='dashboard') renderDashboard('today');
-    if (name==='reports') renderReport();
-    if (name==='settings') renderSettings();
-}
-
-/* Simple global helpers exposed if needed */
+/* Expose helpers if needed */
 window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll };
 </script>
           
 </body>
 </html>
+
 
 
 
