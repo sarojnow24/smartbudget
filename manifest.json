@@ -17,5 +17,13 @@
       "sizes": "512x512",
       "type": "image/png"
     }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot1.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "label": "SmartBajet App Screenshot"
+    }
   ]
 }
