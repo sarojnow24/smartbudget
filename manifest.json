@@ -1,11 +1,11 @@
 {
-  "name": "SmartBadget",
-  "short_name": "SmartBadget",
-  "description": "Smart Budget App - Track your income and expenses easily.",
-  "start_url": "/smartbudget/index.html",
+  "name": "SmartBudget",
+  "short_name": "SmartBudget",
+  "description": "SmartBudget helps you track your income and expenses easily, providing insightful financial reports and budgeting tools.",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#0a0a0a",
+  "theme_color": "#4CAF50",
   "icons": [
     {
       "src": "icon-192.png",
@@ -27,4 +27,5 @@
     }
   ]
 }
+
 
