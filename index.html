@@ -285,299 +285,405 @@
   </nav>
 
 <script>
-/* ====== Global Variables ====== */
+/* ===== Part 1: Globals, Storage, Defaults, SW registration ===== */
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js').catch(()=>{/* ignore */});
+}
+
+/* Globals */
+const today = new Date();
 let categories = [];
 let budgets = [];
 let transactions = [];
-const today = new Date();
+let pieChart = null;
+let currentEditId = null; // id of transaction being edited
 
-/* ====== Helper Functions ====== */
-function isoDate(d) { return d.toISOString().split('T')[0]; }
-function formatDateTime(dt) { return new Date(dt).toLocaleString(); }
-function formatCurrency(val) { return '$' + val.toFixed(2); }
+/* Helpers */
+function isoDate(d){ return new Date(d).toISOString().slice(0,10); }
+function formatDateTime(dt){ return new Date(dt).toLocaleString(); }
+function formatCurrency(v){ return '$' + Number(v||0).toFixed(2); }
 
-/* ====== Save / Load Helpers ====== */
-function saveAll() {
-    localStorage.setItem('categories', JSON.stringify(categories));
-    localStorage.setItem('budgets', JSON.stringify(budgets));
-    localStorage.setItem('transactions', JSON.stringify(transactions));
+/* Storage */
+function saveAll(){
+  localStorage.setItem('categories', JSON.stringify(categories));
+  localStorage.setItem('budgets', JSON.stringify(budgets));
+  localStorage.setItem('transactions', JSON.stringify(transactions));
+}
+function loadAll(){
+  categories = JSON.parse(localStorage.getItem('categories') || '[]');
+  budgets = JSON.parse(localStorage.getItem('budgets') || '[]');
+  transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
 }
 
-function loadAll() {
-    categories = JSON.parse(localStorage.getItem('categories') || '[]');
-    budgets = JSON.parse(localStorage.getItem('budgets') || '[]');
-    transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+/* sensible defaults */
+function ensureDefaults(){
+  if(!categories || categories.length === 0){
+    categories = [
+      { id:'income-1', name:'Salary', type:'income', sub:['Regular Salary','Bonus','Commission'] },
+      { id:'expense-1', name:'Food', type:'expense', sub:['Groceries','Dining Out','Coffee'] },
+      { id:'expense-2', name:'Rent', type:'expense', sub:['Monthly Rent','Mortgage'] },
+      { id:'expense-3', name:'Transport', type:'expense', sub:['Fuel','Transit','Taxi'] }
+    ];
+    saveAll();
+  }
 }
 
-/* ====== Category & Budget Functions ====== */
-function addCategory(c) { 
-    c.id = c.id || (c.type+'-'+Date.now()); 
-    c.sub = c.sub || []; 
-    categories.push(c); 
-    saveAll(); 
-    renderSettings(); 
+/* utility: remove active classes from a selector */
+function clearActive(selector){
+  document.querySelectorAll(selector).forEach(n=>n.classList.remove('active'));
 }
 
-function addBudget(b) { 
-    b.id = b.id || 'b-'+Date.now(); 
-    budgets.push(b); 
-    saveAll(); 
-    renderSettings(); 
+</script>
+  <script>
+/* ===== Part 2: Rendering: Dashboard, Budgets, Settings, Chips ===== */
+
+/* Date range helper */
+function getRange(period){
+  const now = new Date();
+  let start = new Date(now), end = new Date(now);
+  if(period === 'today'){
+    start.setHours(0,0,0,0); end.setHours(23,59,59,999);
+  } else if(period === 'week'){
+    start.setDate(now.getDate()-6); start.setHours(0,0,0,0); end.setHours(23,59,59,999);
+  } else {
+    start = new Date(now.getFullYear(), now.getMonth(), 1,0,0,0);
+    end = new Date(now.getFullYear(), now.getMonth()+1, 0,23,59,59,999);
+  }
+  return { start, end };
 }
 
-/* ====== Transaction Functions ====== */
-let currentEditId = null; // Holds ID if editing
+/* Render dashboard with pie chart and recent tx */
+function renderDashboard(period='today'){
+  const range = getRange(period);
+  document.getElementById('periodLabel').textContent = period === 'today' ? 'Today' : period === 'week' ? 'Last 7 days' : 'This month';
 
-function addTransactionObj(tx) { 
-    if(currentEditId) {
-        // Update existing transaction
-        const idx = transactions.findIndex(t => t.id === currentEditId);
-        if(idx > -1) transactions[idx] = { ...transactions[idx], ...tx };
-        currentEditId = null;
-    } else {
-        tx.id = 'tx-'+Date.now(); 
-        transactions.push(tx); 
+  const filtered = transactions.filter(t=>{
+    const d = new Date(t.dateTime); return d >= range.start && d <= range.end;
+  });
+
+  const income = filtered.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expense = filtered.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+
+  document.getElementById('totalIncome').textContent = formatCurrency(income);
+  document.getElementById('totalExpense').textContent = formatCurrency(expense);
+  document.getElementById('netBalance').textContent = formatCurrency(income - expense);
+  document.getElementById('txCount').textContent = filtered.length;
+
+  // pie chart
+  try {
+    const ctx = document.getElementById('pieChart').getContext('2d');
+    if(pieChart) pieChart.destroy();
+    pieChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Income','Expense'],
+        datasets: [{ data: [income||0.01, expense||0.01], backgroundColor:[getComputedStyle(document.documentElement).getPropertyValue('--accent-income').trim()||'#4CAF50', getComputedStyle(document.documentElement).getPropertyValue('--accent-expense').trim()||'#F44336'] }]
+      },
+      options: { plugins:{ legend:{ position:'bottom' } } }
+    });
+  } catch(e){
+    console.warn('Chart init failed', e);
+  }
+
+  // recent transactions
+  const txListEl = document.getElementById('txList'); txListEl.innerHTML = '';
+  const recent = transactions.slice().sort((a,b)=>new Date(b.dateTime)-new Date(a.dateTime)).slice(0,8);
+  recent.forEach(t=>{
+    const row = document.createElement('div');
+    row.className = 'row'; row.style.justifyContent='space-between'; row.style.padding='8px 0';
+    row.innerHTML = `<div style="min-width:0;"><div style="font-weight:600">${t.mainCategory} <span class="small">(${t.subCategory})</span></div><div class="small">${formatDateTime(t.dateTime)} • ${t.note || ''}</div></div><div style="text-align:right;"><div style="font-weight:700;color:${t.type==='income'?'var(--accent-income)':'var(--accent-expense)'}">${formatCurrency(t.amount)}</div><div class="small" style="margin-top:6px;"><button class="editTxSmall" data-id="${t.id}" style="margin-right:6px;">Edit</button><button class="delTxSmall" data-id="${t.id}">Delete</button></div></div>`;
+    txListEl.appendChild(row);
+  });
+
+  // wire small edit/delete
+  document.querySelectorAll('.editTxSmall').forEach(b=>b.addEventListener('click', ()=> editTransaction(b.dataset.id)));
+  document.querySelectorAll('.delTxSmall').forEach(b=>b.addEventListener('click', ()=> {
+    if(confirm('Delete this transaction?')) {
+      transactions = transactions.filter(x=>x.id !== b.dataset.id);
+      saveAll(); renderCurrentView();
     }
-    saveAll(); 
-    renderCurrentView(); 
+  }));
+
+  renderBudgets();
 }
 
-/* ====== Transaction Chips ====== */
-function populateTxMainChips() {
-    const type = document.getElementById('txType').value; 
-    const container = document.getElementById('txMainChips'); 
-    container.innerHTML='';
+/* Render budgets */
+function renderBudgets(){
+  const out = document.getElementById('budgetCards'); out.innerHTML = '';
+  budgets.forEach(b=>{
+    const start = new Date(b.startDate || 0), end = new Date(b.endDate || Date.now());
+    const actual = transactions.filter(t=>{
+      const d = new Date(t.dateTime);
+      if(d < start || d > end) return false;
+      if(b.categories && b.categories.length) return b.categories.includes(t.mainCategory);
+      return true;
+    }).filter(t=>t.type === b.type).reduce((s,t)=>s+t.amount,0);
+    const percentage = Math.round((actual/(b.amount||1))*100);
+    const remaining = (b.amount || 0) - actual;
+    const color = b.type === 'income' ? getComputedStyle(document.documentElement).getPropertyValue('--accent-income').trim() : getComputedStyle(document.documentElement).getPropertyValue('--accent-expense').trim();
+    const card = document.createElement('div'); card.className='card budget-card';
+    card.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${b.type==='income'?'Income Target':'Expense Budget'}</strong><div class="small">${b.categories && b.categories.length ? b.categories.join(', ') : 'All categories'}</div></div><div style="text-align:right"><div class="small">Amount</div><div style="font-weight:700">${formatCurrency(b.amount)}</div></div></div><div style="margin-top:8px;"><div class="small">Actual ${b.type==='income'?'Achieved':'Spent'}</div><div style="display:flex;align-items:center;gap:8px;margin-top:6px;"><div style="flex:1"><div class="progress"><div class="fill" style="width:${Math.min(percentage,100)}%;background:${color}"></div></div></div><div style="width:60px;text-align:right">${percentage}%</div></div><div class="small" style="margin-top:6px;">Remaining ${formatCurrency(remaining)}</div></div>`;
+    out.appendChild(card);
+  });
+}
+
+/* Render settings (categories list + budget chips) */
+function renderSettings(){
+  const list = document.getElementById('categoriesList'); list.innerHTML = '';
+  ['income','expense'].forEach(type=>{
+    const title = document.createElement('div'); title.innerHTML = `<strong style="margin-top:8px">${type.toUpperCase()}</strong>`; list.appendChild(title);
     categories.filter(c=>c.type===type).forEach(c=>{
-        const chip = document.createElement('span'); 
-        chip.className='chip'; 
-        chip.textContent=c.name; 
-        chip.dataset.name=c.name;
-        chip.onclick = ()=>{
-            document.querySelectorAll('#txMainChips .chip').forEach(n=>n.classList.remove('active')); 
-            chip.classList.add('active'); 
-            populateTxSubChips(c.name);
-        };
-        container.appendChild(chip);
+      const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.padding='6px 0';
+      row.innerHTML = `<div><div style="font-weight:600">${c.name}</div><div class="small">${(c.sub||[]).join(', ')}</div></div><div><button class="delCat" data-id="${c.id}">Del</button></div>`;
+      list.appendChild(row);
     });
-    document.getElementById('txSubChips').innerHTML='';
+  });
+  renderBudgetCategoryChips();
 }
 
-function populateTxSubChips(mainName) {
-    const cat = categories.find(c=>c.name===mainName); 
-    const container = document.getElementById('txSubChips'); 
-    container.innerHTML='';
-    (cat.sub||[]).forEach(sub=>{
-        const chip = document.createElement('span'); 
-        chip.className='chip'; 
-        chip.textContent=sub;
-        chip.onclick = () => { 
-            document.querySelectorAll('#txSubChips .chip').forEach(n=>n.classList.remove('active')); 
-            chip.classList.add('active'); 
-        };
-        container.appendChild(chip);
-    });
+/* Budget category chips for selection */
+function renderBudgetCategoryChips(){
+  const container = document.getElementById('budgetCategoryChips'); container.innerHTML = '';
+  const type = document.getElementById('budgetType').value;
+  categories.filter(c=>c.type === type).forEach(c=>{
+    const chip = document.createElement('span'); chip.className='chip'; chip.textContent = c.name; chip.dataset.name = c.name;
+    chip.onclick = ()=> chip.classList.toggle('active');
+    container.appendChild(chip);
+  });
 }
 
-/* ====== Render Report ====== */
-function renderReport() {
+/* Populate transaction main chips and sub chips */
+function populateTxMainChips(){
+  const type = document.getElementById('txType').value;
+  const container = document.getElementById('txMainChips'); container.innerHTML = '';
+  categories.filter(c=>c.type === type).forEach(c=>{
+    const chip = document.createElement('span'); chip.className='chip'; chip.textContent = c.name; chip.dataset.name = c.name;
+    chip.onclick = ()=>{ clearActive('#txMainChips .chip'); chip.classList.add('active'); populateTxSubChips(c.name); };
+    container.appendChild(chip);
+  });
+  document.getElementById('txSubChips').innerHTML = '';
+}
+function populateTxSubChips(mainName){
+  const cat = categories.find(c=>c.name === mainName); const container = document.getElementById('txSubChips'); container.innerHTML = '';
+  if(!cat) return;
+  (cat.sub||[]).forEach(sub=>{
+    const chip = document.createElement('span'); chip.className='chip'; chip.textContent = sub;
+    chip.onclick = ()=>{ clearActive('#txSubChips .chip'); chip.classList.add('active'); };
+    container.appendChild(chip);
+  });
+}
+</script>
+<script>
+/* ===== Part 3: Events, Add/Edit/Delete, Export, Wiring ===== */
+
+/* Open new form */
+function openAddFormForNew(){
+  currentEditId = null;
+  document.getElementById('addForm').style.display = 'block';
+  const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(today.getDate()-7);
+  document.getElementById('txDate').min = isoDate(sevenDaysAgo);
+  document.getElementById('txDate').max = isoDate(new Date());
+  document.getElementById('txDate').value = isoDate(new Date());
+  document.getElementById('txTime').value = new Date().toTimeString().slice(0,5);
+  document.getElementById('txAmount').value = '';
+  document.getElementById('txNote').value = '';
+  populateTxMainChips();
+}
+
+/* Edit transaction */
+function editTransaction(id){
+  const tx = transactions.find(t=>t.id === id);
+  if(!tx) return;
+  currentEditId = id;
+  document.getElementById('addForm').style.display='block';
+  document.getElementById('txType').value = tx.type;
+  populateTxMainChips();
+  // select main
+  document.querySelectorAll('#txMainChips .chip').forEach(ch=>{ if(ch.dataset.name === tx.mainCategory) ch.classList.add('active'); });
+  populateTxSubChips(tx.mainCategory);
+  document.querySelectorAll('#txSubChips .chip').forEach(ch=>{ if(ch.textContent === tx.subCategory) ch.classList.add('active'); });
+  document.getElementById('txAmount').value = tx.amount;
+  document.getElementById('txNote').value = tx.note || '';
+  const d = new Date(tx.dateTime);
+  document.getElementById('txDate').value = isoDate(d);
+  document.getElementById('txTime').value = d.toTimeString().slice(0,5);
+}
+
+/* Save (create or update) */
+function saveTransactionFromForm(){
+  const type = document.getElementById('txType').value;
+  const amount = parseFloat(document.getElementById('txAmount').value);
+  const main = Array.from(document.querySelectorAll('#txMainChips .chip.active')).map(n=>n.dataset.name)[0];
+  const sub = Array.from(document.querySelectorAll('#txSubChips .chip.active')).map(n=>n.textContent)[0];
+  const note = document.getElementById('txNote').value.trim();
+  const date = document.getElementById('txDate').value;
+  const time = document.getElementById('txTime').value || '00:00';
+
+  if(!main){ alert('Select main category'); return; }
+  if(!sub){ alert('Select subcategory'); return; }
+  if(!amount || amount <= 0){ alert('Enter valid amount'); return; }
+
+  const sel = new Date(date + 'T' + time + ':00');
+  const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(today.getDate()-7); sevenDaysAgo.setHours(0,0,0,0);
+  if(sel < sevenDaysAgo){ alert('You can only select dates up to 7 days in the past'); return; }
+  if(sel > new Date()){ alert('Cannot select future date'); return; }
+
+  if(currentEditId){
+    const idx = transactions.findIndex(t=>t.id === currentEditId);
+    if(idx > -1){
+      transactions[idx] = { ...transactions[idx], type, mainCategory: main, subCategory: sub, amount, note, dateTime: sel.toISOString() };
+    }
+    currentEditId = null;
+  } else {
+    const txId = 'tx-' + sel.getTime() + '-' + amount;
+    if(transactions.find(t=>t.id === txId)){ alert('This transaction already exists'); return; }
+    transactions.push({ id: txId, type, mainCategory: main, subCategory: sub, amount, note, dateTime: sel.toISOString() });
+  }
+
+  saveAll();
+
+  // clear & close
+  document.getElementById('txAmount').value = '';
+  document.getElementById('txNote').value = '';
+  document.getElementById('txMainChips').innerHTML = '';
+  document.getElementById('txSubChips').innerHTML = '';
+  document.getElementById('addForm').style.display = 'none';
+
+  renderCurrentView();
+}
+
+/* Reports render + export wiring (keeps existing) */
+function renderReport(){ /* keep existing implementation from Part2 for consistency */ 
+  // Part2 already defines renderReport with same name; call it through renderCurrentView -> it's okay
+  return (function(){
     const from = document.getElementById('reportFrom').value ? new Date(document.getElementById('reportFrom').value+'T00:00:00') : new Date(0);
     const to = document.getElementById('reportTo').value ? new Date(document.getElementById('reportTo').value+'T23:59:59') : new Date();
     const type = document.getElementById('reportType').value;
-    const filtered = transactions.filter(t=>{
-        const d = new Date(t.dateTime); 
-        return d>=from && d<=to && (type==='all'?true:t.type===type); 
-    });
+    const filtered = transactions.filter(t=>{ const d=new Date(t.dateTime); return d>=from && d<=to && (type==='all'?true:t.type===type); });
     const income = filtered.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
     const expense = filtered.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
     document.getElementById('reportIncome').textContent = formatCurrency(income);
     document.getElementById('reportExpense').textContent = formatCurrency(expense);
 
-    const list = document.getElementById('reportTxList'); 
-    list.innerHTML='';
+    const list = document.getElementById('reportTxList'); list.innerHTML='';
     filtered.slice().sort((a,b)=>new Date(b.dateTime)-new Date(a.dateTime)).forEach(t=>{
-        const r = document.createElement('div'); 
-        r.style.padding='8px 0';
-        r.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;">
-            <div>
-                <strong>${t.mainCategory} - ${t.subCategory}</strong>
-                <div class="small">${formatDateTime(t.dateTime)}</div>
-            </div>
-            <div style="text-align:right">
-                ${formatCurrency(t.amount)}
-                <div class="small">${t.type.toUpperCase()}</div>
-                <button class="editTx" data-id="${t.id}">Edit</button>
-                <button class="delTx" data-id="${t.id}">Delete</button>
-            </div>
-        </div>`;
-        list.appendChild(r);
+      const r=document.createElement('div'); r.style.padding='8px 0';
+      r.innerHTML = `<div style="display:flex;justify-content:space-between;"><div><strong>${t.mainCategory} - ${t.subCategory}</strong><div class="small">${formatDateTime(t.dateTime)}</div></div><div style="text-align:right">${formatCurrency(t.amount)}<div class="small">${t.type.toUpperCase()}</div><div style="margin-top:6px;"><button class="editTx" data-id="${t.id}" style="margin-right:6px;">Edit</button><button class="delTx" data-id="${t.id}">Delete</button></div></div></div>`;
+      list.appendChild(r);
     });
 
-    // Add edit/delete handlers
-    document.querySelectorAll('.editTx').forEach(btn=>{
-        btn.addEventListener('click', ()=>{
-            const id = btn.dataset.id;
-            const tx = transactions.find(t=>t.id===id);
-            if(!tx) return;
-            currentEditId = id;
-            document.getElementById('addForm').style.display='block';
-            document.getElementById('txType').value = tx.type;
-            populateTxMainChips();
-            document.querySelectorAll('#txMainChips .chip').forEach(c=>{ if(c.dataset.name===tx.mainCategory) c.classList.add('active'); });
-            populateTxSubChips(tx.mainCategory);
-            document.querySelectorAll('#txSubChips .chip').forEach(c=>{ if(c.textContent===tx.subCategory) c.classList.add('active'); });
-            document.getElementById('txAmount').value = tx.amount;
-            document.getElementById('txNote').value = tx.note || '';
-            const d = new Date(tx.dateTime);
-            document.getElementById('txDate').value = isoDate(d);
-            document.getElementById('txTime').value = d.toTimeString().slice(0,5);
-        });
-    });
-
-    document.querySelectorAll('.delTx').forEach(btn=>{
-        btn.addEventListener('click', ()=>{
-            const id = btn.dataset.id;
-            if(confirm('Delete this transaction?')) {
-                transactions = transactions.filter(t=>t.id!==id);
-                saveAll();
-                renderCurrentView();
-            }
-        });
-    });
+    // wire edit/delete buttons
+    document.querySelectorAll('.editTx').forEach(btn=> btn.addEventListener('click', ()=> editTransaction(btn.dataset.id)));
+    document.querySelectorAll('.delTx').forEach(btn=> btn.addEventListener('click', ()=> {
+      if(confirm('Delete this transaction?')) { transactions = transactions.filter(t=>t.id !== btn.dataset.id); saveAll(); renderCurrentView(); }
+    }));
 
     return { filtered, income, expense, from, to };
+  })();
 }
 
-/* ====== Export to Excel ====== */
-function exportReportToExcel(dataObj) {
-    const { filtered, income, expense, from, to } = dataObj;
-    const wb = XLSX.utils.book_new();
-    const summary = [[ 'Report From', isoDate(from) ],[ 'Report To', isoDate(to) ],[ 'Total Income', income ],[ 'Total Expense', expense ],[ 'Net Balance', income - expense ]];
-    const ws1 = XLSX.utils.aoa_to_sheet(summary); XLSX.utils.book_append_sheet(wb, ws1, 'Summary');
-    const rows = [['Date','Type','Category','Subcategory','Amount','Note']];
-    filtered.forEach(t=> rows.push([ new Date(t.dateTime).toLocaleString(), t.type, t.mainCategory, t.subCategory, t.amount, t.note||'' ] ));
-    const ws2 = XLSX.utils.aoa_to_sheet(rows); XLSX.utils.book_append_sheet(wb, ws2, 'Transactions');
-    const brows = [['Type','Categories','Amount','Start','End']];
-    budgets.forEach(b=> brows.push([b.type, b.categories?b.categories.join(','):'All', b.amount, b.startDate, b.endDate]));
-    const ws3 = XLSX.utils.aoa_to_sheet(brows); XLSX.utils.book_append_sheet(wb, ws3, 'Budgets');
-    const wbout = XLSX.write(wb, { bookType:'xlsx', type:'array' });
-    const blob = new Blob([wbout], { type: 'application/octet-stream' });
-    saveAs(blob, `smartbudget-report-${isoDate(from)}_to_${isoDate(to)}.xlsx`);
+/* Export to Excel (SheetJS + FileSaver loaded in head) */
+function exportReportToExcel(dataObj){
+  const { filtered, income, expense, from, to } = dataObj;
+  const wb = XLSX.utils.book_new();
+  const summary = [['Report From', isoDate(from)],['Report To', isoDate(to)],['Total Income', income],['Total Expense', expense],['Net Balance', income - expense]];
+  const ws1 = XLSX.utils.aoa_to_sheet(summary); XLSX.utils.book_append_sheet(wb, ws1, 'Summary');
+  const rows = [['Date','Type','Category','Subcategory','Amount','Note']];
+  filtered.forEach(t=> rows.push([ new Date(t.dateTime).toLocaleString(), t.type, t.mainCategory, t.subCategory, t.amount, t.note||'' ] ));
+  const ws2 = XLSX.utils.aoa_to_sheet(rows); XLSX.utils.book_append_sheet(wb, ws2, 'Transactions');
+  const brows = [['Type','Categories','Amount','Start','End']]; budgets.forEach(b=> brows.push([b.type, b.categories?b.categories.join(','):'All', b.amount, b.startDate, b.endDate]));
+  const ws3 = XLSX.utils.aoa_to_sheet(brows); XLSX.utils.book_append_sheet(wb, ws3, 'Budgets');
+  const wbout = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+  const blob = new Blob([wbout], { type: 'application/octet-stream' });
+  saveAs(blob, `smartbudget-report-${isoDate(from)}_to_${isoDate(to)}.xlsx`);
 }
 
-/* ====== Render Current Views ====== */
-function renderCurrentView() {
-    renderReport();
+/* Render current views */
+function renderCurrentView(){
+  renderDashboard('today');
+  renderReport();
+  renderSettings();
 }
 
-/* ====== Show / Hide Views ====== */
-function showView(name) {
-    document.getElementById('dashboardView').style.display = name==='dashboard' ? '' : 'none';
-    document.getElementById('reportsView').style.display = name==='reports' ? '' : 'none';
-    document.getElementById('settingsView').style.display = name==='settings' ? '' : 'none';
-    if(name==='dashboard') renderDashboard('today');
-    if(name==='reports') renderReport();
-    if(name==='settings') renderSettings();
-}
+/* Wiring on DOM ready */
+document.addEventListener('DOMContentLoaded', ()=>{
+  loadAll(); ensureDefaults();
 
-/* ====== Document Ready ====== */
-document.addEventListener('DOMContentLoaded', ()=> {
-    loadAll();
+  document.getElementById('reportTo').value = isoDate(new Date());
+  const weekStart = new Date(); weekStart.setDate(today.getDate()-6);
+  document.getElementById('reportFrom').value = isoDate(weekStart);
 
-    document.getElementById('reportTo').value = isoDate(today);
-    const weekStart = new Date(); weekStart.setDate(today.getDate()-6);
-    document.getElementById('reportFrom').value = isoDate(weekStart);
+  // period buttons
+  document.querySelectorAll('.periodBtn').forEach(b=> b.addEventListener('click', ev=> renderDashboard(ev.currentTarget.dataset.period)));
 
-    document.querySelectorAll('.periodBtn').forEach(b=>b.addEventListener('click', (ev)=> renderDashboard(ev.currentTarget.dataset.period)));
-    document.getElementById('openAdd').addEventListener('click', ()=> {
-        currentEditId = null;
-        document.getElementById('addForm').style.display='block';
-        const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate()-7);
-        document.getElementById('txDate').min = isoDate(sevenDaysAgo);
-        document.getElementById('txDate').max = isoDate(new Date());
-        document.getElementById('txDate').value = isoDate(new Date());
-        document.getElementById('txTime').value = new Date().toTimeString().slice(0,5);
-        populateTxMainChips();
-    });
-    document.getElementById('closeForm').addEventListener('click', ()=> document.getElementById('addForm').style.display='none');
-    document.getElementById('txType').addEventListener('change', populateTxMainChips);
+  // open/close/add
+  document.getElementById('openAdd').addEventListener('click', openAddFormForNew);
+  document.getElementById('closeForm').addEventListener('click', ()=> document.getElementById('addForm').style.display='none');
 
-    document.getElementById('saveTx').addEventListener('click', ()=> {
-        const type = document.getElementById('txType').value;
-        const amount = parseFloat(document.getElementById('txAmount').value);
-        const main = Array.from(document.querySelectorAll('#txMainChips .chip.active')).map(n=>n.dataset.name)[0];
-        const sub = Array.from(document.querySelectorAll('#txSubChips .chip.active')).map(n=>n.textContent)[0];
-        const note = document.getElementById('txNote').value.trim();
-        const date = document.getElementById('txDate').value;
-        const time = document.getElementById('txTime').value || '00:00';
+  // tx type change
+  document.getElementById('txType').addEventListener('change', populateTxMainChips);
 
-        if (!main) { alert('Select main category'); return; }
-        if (!sub) { alert('Select subcategory'); return; }
-        if (!amount || amount <= 0) { alert('Enter valid amount'); return; }
-        const sel = new Date(date + 'T' + time + ':00');
-        const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate()-7); sevenDaysAgo.setHours(0,0,0,0);
-        if (sel < sevenDaysAgo) { alert('You can only select dates up to 7 days in the past'); return; }
-        if (sel > new Date()) { alert('Cannot select future date'); return; }
+  // save tx
+  document.getElementById('saveTx').addEventListener('click', saveTransactionFromForm);
 
-        addTransactionObj({ type, mainCategory: main, subCategory: sub, amount, note, dateTime: sel.toISOString() });
-        document.getElementById('addForm').style.display='none';
-    });
+  // add category
+  document.getElementById('addCategoryBtn').addEventListener('click', ()=>{
+    const type = document.getElementById('newCatType').value;
+    const name = document.getElementById('newCatName').value.trim();
+    const subs = document.getElementById('newCatSubs').value.split(',').map(s=>s.trim()).filter(Boolean);
+    if(!name){ alert('Enter category name'); return; }
+    addCategory({ name, type, sub: subs });
+    document.getElementById('newCatName').value = ''; document.getElementById('newCatSubs').value = '';
+  });
 
-    document.getElementById('addCategoryBtn').addEventListener('click', ()=> {
-        const type = document.getElementById('newCatType').value;
-        const name = document.getElementById('newCatName').value.trim();
-        const subs = document.getElementById('newCatSubs').value.split(',').map(s=>s.trim()).filter(Boolean);
-        if (!name) { alert('Enter category name'); return; }
-        addCategory({ name, type, sub: subs });
-        document.getElementById('newCatName').value = ''; 
-        document.getElementById('newCatSubs').value = '';
-    });
+  // delete category
+  document.getElementById('categoriesList').addEventListener('click', (e)=>{
+    if(e.target.matches('.delCat')){
+      const id = e.target.dataset.id;
+      if(confirm('Delete category?')){ categories = categories.filter(c=>c.id !== id); saveAll(); renderSettings(); renderCurrentView(); }
+    }
+  });
 
-    document.getElementById('categoriesList').addEventListener('click', (e)=> {
-        if (e.target.matches('.delCat')) {
-            const id = e.target.dataset.id;
-            if (confirm('Delete category?')) {
-                categories = categories.filter(c=>c.id !== id);
-                saveAll(); renderSettings(); renderCurrentView();
-            }
-        }
-    });
+  // budget handlers
+  document.getElementById('budgetType').addEventListener('change', renderBudgetCategoryChips);
+  document.getElementById('addBudgetBtn').addEventListener('click', ()=>{
+    const type = document.getElementById('budgetType').value;
+    const amount = parseFloat(document.getElementById('budgetAmount').value);
+    const start = document.getElementById('budgetStart').value;
+    const end = document.getElementById('budgetEnd').value;
+    const chosen = Array.from(document.querySelectorAll('#budgetCategoryChips .chip.active')).map(n=>n.dataset.name);
+    if(!amount || amount <= 0){ alert('Enter budget amount'); return; }
+    if(!start || !end){ alert('Select start and end dates'); return; }
+    addBudget({ type, categories: chosen, amount, startDate: start, endDate: end });
+    document.getElementById('budgetAmount').value=''; renderSettings();
+  });
 
-    document.getElementById('budgetType').addEventListener('change', renderBudgetCategoryChips);
-    document.getElementById('addBudgetBtn').addEventListener('click', ()=> {
-        const type = document.getElementById('budgetType').value;
-        const amount = parseFloat(document.getElementById('budgetAmount').value);
-        const start = document.getElementById('budgetStart').value;
-        const end = document.getElementById('budgetEnd').value;
-        const chosen = Array.from(document.querySelectorAll('#budgetCategoryChips .chip.active')).map(n=>n.dataset.name);
-        if (!amount || amount <= 0) { alert('Enter budget amount'); return; }
-        if (!start || !end) { alert('Select start and end dates'); return; }
-        addBudget({ type, categories: chosen, amount, startDate: start, endDate: end });
-        document.getElementById('budgetAmount').value=''; renderSettings();
-    });
+  // reports/export
+  document.getElementById('applyReport').addEventListener('click', ()=> renderReport());
+  document.getElementById('downloadCsv').addEventListener('click', ()=> exportReportToExcel(renderReport()));
+  document.getElementById('downloadPdf').addEventListener('click', ()=> alert('PDF export coming soon'));
 
-    document.getElementById('applyReport').addEventListener('click', ()=> renderReport());
-    document.getElementById('downloadCsv').addEventListener('click', ()=> exportReportToExcel(renderReport()));
-    document.getElementById('downloadPdf').addEventListener('click', ()=> alert('PDF export coming soon'));
+  // bottom nav
+  document.getElementById('bottomNav').addEventListener('click', (e)=>{
+    const btn = e.target.closest('#bottomNav button');
+    if(!btn) return;
+    document.querySelectorAll('#bottomNav button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    showView(btn.dataset.view);
+  });
 
-    /* Bottom nav handling */
-    document.getElementById('bottomNav').addEventListener('click', (e)=> {
-        const btn = e.target.closest('#bottomNav button');
-        if (!btn) return;
-        document.querySelectorAll('#bottomNav button').forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
-        showView(btn.dataset.view);
-    });
-
-    renderSettings(); 
-    renderDashboard('today');
+  renderCurrentView();
 });
 
 /* Expose helpers if needed */
-window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll };
+window.appHelpers = { addCategory, addBudget, saveAll, editTransaction };
 </script>
+
           
 </body>
 </html>
+
 
 
 
