@@ -1,6 +1,6 @@
 {
-  "name": "SmartBajet",
-  "short_name": "SmartBajet",
+  "name": "SmartBadget",
+  "short_name": "SmartBadget",
   "description": "Smart Budget App - Track your income and expenses easily.",
   "start_url": "/smartbudget/index.html",
   "display": "standalone",
@@ -27,3 +27,4 @@
     }
   ]
 }
+
