@@ -2,7 +2,7 @@
   "id": "/index.html",
   "name": "SmartBudget",
   "short_name": "SmartBudget",
-  "description": "SmartBudget helps you track income and expenses easily, with reports and budgeting tools.",
+  "description": "SmartBudget helps you track income and expenses easily, providing reports and budgeting tools.",
   "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#ffffff",
