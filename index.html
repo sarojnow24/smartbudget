@@ -11,6 +11,10 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <!-- FileSaver -->
   <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <!-- jsPDF -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <!-- html2canvas -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1976d2">
@@ -24,27 +28,46 @@
       --muted: #777;
       --gap: 12px;
       font-family: Inter, system-ui, Arial, sans-serif;
+      --text: #222;
+      --surface: #fff;
     }
-    html,body { height:100%; margin:0; background:var(--bg); -webkit-font-smoothing:antialiased; }
-    .app { max-width:900px; margin:0 auto; padding:16px; padding-bottom:96px; }
+    [data-theme="dark"] {
+      --bg: #0f1720;
+      --card: #0b1220;
+      --accent-income: #34d399;
+      --accent-expense: #fb7185;
+      --muted: #9aa4b2;
+      --text: #e6eef6;
+      --surface: #071025;
+    }
+    html,body { height:100%; margin:0; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; }
+    .app { max-width:900px; margin:0 auto; padding:16px; padding-bottom:120px; }
     header { margin-bottom:12px; }
     header h1 { font-size:18px; margin:0; }
     header .small { color:var(--muted); font-size:13px; }
-    .card { background:var(--card); padding:12px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:12px; }
+    .card { background:var(--card); padding:12px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:12px; color:var(--text); }
     .row { display:flex; gap:8px; align-items:center; }
     .col { display:flex; flex-direction:column; gap:8px; }
     .small { font-size:13px; color:var(--muted); }
     .big { font-size:20px; font-weight:700; }
-    button { background:#1976d2; color:#fff; border:none; padding:10px 12px; border-radius:10px; font-weight:600; }
-    .fab { position:fixed; right:18px; bottom:88px; width:58px; height:58px; border-radius:29px; display:flex; align-items:center; justify-content:center; font-size:28px; color:#fff; background:var(--accent-income); box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:1100; }
-    input, select, textarea { padding:8px; border-radius:8px; border:1px solid #e0e0e0; width:100%; box-sizing:border-box; }
+    .btn { background:#1976d2; color:#fff; border:none; padding:10px 12px; border-radius:10px; font-weight:600; cursor:pointer; }
+    .btn.ghost { background:transparent; color:var(--text); border:1px solid #e0e0e0; }
+    .fab { position:fixed; right:18px; bottom:130px; width:58px; height:58px; border-radius:29px; display:flex; align-items:center; justify-content:center; font-size:28px; color:#fff; background:var(--accent-income); box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:1400; cursor:pointer; }
+    input, select, textarea { padding:8px; border-radius:8px; border:1px solid #e0e0e0; width:100%; box-sizing:border-box; background:transparent; color:var(--text); }
     .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .chip { padding:8px 10px; border-radius:999px; background:#f0f0f0; cursor:pointer; display:inline-block; margin:4px 4px 0 0; }
+    .chip { padding:8px 10px; border-radius:999px; background:#f0f0f0; cursor:pointer; display:inline-block; margin:4px 4px 0 0; color:var(--text); }
     .chip.active { background:var(--accent-income); color:#fff; }
-    .chip.expense.active { background:var(--accent-expense); }
+    .chip.expense.active { background:var(--accent-expense); color:#fff; }
     .progress { height:10px; background:#eee; border-radius:8px; overflow:hidden; }
     .progress > .fill { height:100%; background:var(--accent-income); width:0%; }
     .budget-card { margin-bottom:12px; }
+    .table { width:100%; border-collapse:collapse; margin-top:8px; }
+    .table th, .table td { padding:8px 6px; border-bottom:1px solid #eee; font-size:14px; text-align:left; }
+    .table th { font-weight:700; color:var(--muted); font-size:12px; }
+    .muted { color:var(--muted); font-size:12px; }
+    .icon-btn { padding:6px 8px; border-radius:8px; border: none; cursor:pointer; background:transparent; }
+    .danger { background:#d32f2f; color:white; border-radius:6px; padding:6px 8px; cursor:pointer; border:none; }
+    .success { background:var(--accent-income); color:white; border-radius:6px; padding:6px 8px; cursor:pointer; border:none; }
 
     /* Bottom nav */
     #bottomNav {
@@ -53,13 +76,13 @@
       left: 0;
       right: 0;
       height: 70px;
-      background: #ffffff;
+      background: var(--surface);
       display: flex;
       justify-content: space-around;
       align-items: center;
       border-top: 1px solid #e0e0e0;
       box-shadow: 0 -2px 6px rgba(0,0,0,0.05);
-      z-index: 1200;
+      z-index: 1500;
     }
     #bottomNav button {
       flex: 1;
@@ -77,10 +100,25 @@
     }
     #bottomNav button span { font-size: 20px; }
     #bottomNav button.active { color: #1976d2; }
+
+    /* modal */
+    .modal {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 140px;
+      z-index: 2000;
+      border-radius: 12px;
+      max-height: 70vh;
+      overflow:auto;
+    }
+
+    @media (min-width:720px){ .app{ padding:24px; } header h1{ font-size:22px; } .fab{ right:28px; bottom:140px;} }
   </style>
 </head>
 <body>
-  <div class="app">
+
+  <div class="app" id="appRoot">
     <header>
       <h1>SmartBudget Tracker</h1>
       <div class="small">Track income, expenses & budgets — works offline</div>
@@ -93,9 +131,9 @@
           <div>
             <div class="small">Period</div>
             <div style="display:flex; gap:6px; margin-top:6px;">
-              <button data-period="today" class="periodBtn">Today</button>
-              <button data-period="week" class="periodBtn">Last 7d</button>
-              <button data-period="month" class="periodBtn">This Month</button>
+              <button data-period="today" class="periodBtn btn">Today</button>
+              <button data-period="week" class="periodBtn btn">Last 7d</button>
+              <button data-period="month" class="periodBtn btn">This Month</button>
             </div>
           </div>
           <div style="text-align:right;">
@@ -117,7 +155,7 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="chartCard">
         <canvas id="pieChart" style="width:100%;height:200px;"></canvas>
       </div>
 
@@ -128,7 +166,23 @@
           <div><strong>Recent Transactions</strong></div>
           <div class="small"><span id="txCount">0</span> items</div>
         </div>
-        <div id="txList" style="margin-top:12px;"></div>
+
+        <!-- Table layout (Option C) -->
+        <table class="table" id="transactionsTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Sub</th>
+              <th>Note</th>
+              <th>Amount</th>
+              <th>Type</th>
+              <th style="width:120px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="transactionsTableBody"></tbody>
+        </table>
+
       </div>
     </div>
 
@@ -154,7 +208,7 @@
           </div>
           <div style="flex:0.6">
             <label class="small">&nbsp;</label>
-            <button id="applyReport">Apply</button>
+            <button id="applyReport" class="btn">Apply</button>
           </div>
         </div>
       </div>
@@ -172,8 +226,8 @@
           </div>
         </div>
         <div style="margin-top:12px;">
-          <button id="downloadCsv">Download CSV/Excel</button>
-          <button id="downloadPdf" disabled>Export PDF (Soon)</button>
+          <button id="downloadCsv" class="btn">Download Excel</button>
+          <button id="downloadPdf" class="btn">Export PDF</button>
         </div>
       </div>
 
@@ -185,6 +239,67 @@
 
     <!-- SETTINGS -->
     <div id="settingsView" style="display:none;">
+      <div class="card">
+        <strong>App Settings</strong>
+        <div class="small">Customize default views, transaction display, categories, theme, currency, and export.</div>
+
+        <div style="margin-top:12px;">
+          <label class="small">Default Dashboard View</label>
+          <select id="defaultDashboardView">
+            <option value="today">Daily (Today)</option>
+            <option value="week">Weekly (Last 7d)</option>
+            <option value="month">Monthly</option>
+            <option value="all">All Transactions</option>
+          </select>
+
+          <label class="small">Default Reports View</label>
+          <select id="defaultReportView">
+            <option value="today">Daily</option>
+            <option value="week">Weekly</option>
+            <option value="month">Monthly</option>
+            <option value="custom">Custom</option>
+            <option value="all">All time</option>
+          </select>
+
+          <label class="small">Transaction Display</label>
+          <select id="transactionDisplay">
+            <option value="individual">Individual Transactions</option>
+            <option value="category">Totals by Category</option>
+            <option value="both">Both</option>
+          </select>
+
+          <label class="small">Currency</label>
+          <select id="currencySelect">
+            <option value="USD">$ - USD</option>
+            <option value="AED">AED - د.إ</option>
+            <option value="INR">₹ - INR</option>
+            <option value="NPR">Rs - NPR</option>
+            <option value="custom">Custom...</option>
+          </select>
+          <input id="currencyCustom" placeholder="Symbol or code (e.g., $ or AED)" style="margin-top:8px; display:none">
+
+          <label class="small">Theme</label>
+          <select id="themeSelect">
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+            <option value="auto">Auto (system)</option>
+          </select>
+
+          <label class="small">Export Default</label>
+          <select id="exportDefault">
+            <option value="monthly">Monthly</option>
+            <option value="weekly">Weekly</option>
+            <option value="daily">Daily</option>
+            <option value="custom">Custom</option>
+          </select>
+
+          <div style="margin-top:12px;">
+            <button id="saveSettings" class="btn">Save Settings</button>
+            <button id="resetSettings" class="btn ghost">Reset to Defaults</button>
+          </div>
+        </div>
+      </div>
+
       <div class="card">
         <strong>Categories</strong>
         <div class="small">Add income / expense categories (separate)</div>
@@ -199,7 +314,7 @@
           <label class="small">Subcategories (comma separated)</label>
           <input id="newCatSubs" placeholder="Project,Bonus">
           <div style="margin-top:8px;">
-            <button id="addCategoryBtn">Add Category</button>
+            <button id="addCategoryBtn" class="btn">Add Category</button>
           </div>
         </div>
 
@@ -227,7 +342,7 @@
           <label class="small">End Date</label>
           <input id="budgetEnd" type="date">
           <div style="margin-top:8px;">
-            <button id="addBudgetBtn">Add Budget</button>
+            <button id="addBudgetBtn" class="btn">Add Budget</button>
           </div>
         </div>
 
@@ -236,13 +351,14 @@
           <div id="budgetsList" style="margin-top:8px;"></div>
         </div>
       </div>
+
     </div>
 
     <!-- Add Transaction Modal (inline) -->
-    <div id="addForm" class="card" style="display:none; position:fixed; left:12px; right:12px; bottom:140px; z-index:1300;">
+    <div id="addForm" class="card modal" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
-        <strong>Add Transaction</strong>
-        <button id="closeForm">Close</button>
+        <strong id="addFormTitle">Add Transaction</strong>
+        <button id="closeForm" class="btn ghost">Close</button>
       </div>
       <div style="margin-top:8px;">
         <label class="small">Type</label>
@@ -269,12 +385,49 @@
           </div>
         </div>
         <div style="margin-top:8px;">
-          <button id="saveTx">Save Transaction</button>
+          <button id="saveTx" class="btn">Save Transaction</button>
         </div>
       </div>
     </div>
 
-    <button class="fab" id="openAdd">+</button>
+    <!-- Edit Transaction Modal -->
+    <div id="editForm" class="card modal" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong>Edit Transaction</strong>
+        <button id="closeEdit" class="btn ghost">Close</button>
+      </div>
+      <div style="margin-top:8px;">
+        <input type="hidden" id="editTxId">
+        <label class="small">Type</label>
+        <select id="editTxType">
+          <option value="expense">Expense</option>
+          <option value="income">Income</option>
+        </select>
+        <label class="small">Amount</label>
+        <input id="editTxAmount" type="number" step="0.01" placeholder="0.00">
+        <label class="small">Main Category</label>
+        <div id="editTxMainChips"></div>
+        <label class="small">Subcategory</label>
+        <div id="editTxSubChips"></div>
+        <label class="small">Note</label>
+        <input id="editTxNote" placeholder="Optional note">
+        <div class="row" style="gap:8px;">
+          <div style="flex:1;">
+            <label class="small">Date</label>
+            <input id="editTxDate" type="date">
+          </div>
+          <div style="flex:1;">
+            <label class="small">Time</label>
+            <input id="editTxTime" type="time">
+          </div>
+        </div>
+        <div style="margin-top:8px;">
+          <button id="updateTx" class="btn">Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="fab" id="openAdd" title="Add transaction">+</button>
   </div>
 
   <!-- Bottom navigation -->
@@ -285,303 +438,607 @@
   </nav>
 
 <script>
-/* ---------- Simple PWA registration ---------- */
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+/* ---------- PWA registration ---------- */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js').catch(()=>{/* no-op */});
+}
 
-/* ---------- Storage ---------- */
+/* ---------- Storage + Defaults ---------- */
 const today = new Date();
 const isoDate = d => (new Date(d)).toISOString().slice(0,10);
+
 const storage = {
-  get(k, fallback){ try { const v=localStorage.getItem(k); return v?JSON.parse(v):fallback; } catch(e){return fallback;} },
-  set(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+  get(k, fallback) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch(e){ return fallback; } },
+  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 };
 
 const DEFAULT_CATEGORIES = [
   { id:'income-1', name:'Salary', type:'income', sub:['Regular Salary','Bonus','Commission'] },
+  { id:'income-2', name:'Freelance', type:'income', sub:['Project','Consultation'] },
   { id:'expense-1', name:'Food', type:'expense', sub:['Groceries','Dining Out','Coffee'] },
   { id:'expense-2', name:'Rent', type:'expense', sub:['Monthly Rent','Mortgage'] },
   { id:'expense-3', name:'Transport', type:'expense', sub:['Fuel','Transit','Taxi'] },
+  { id:'expense-4', name:'Utilities', type:'expense', sub:['Electricity','Water','Internet'] }
 ];
+
+const DEFAULT_SETTINGS = {
+  defaultDashboardView: 'today',
+  defaultReportView: 'month',
+  transactionDisplay: 'individual',
+  hiddenCategories: [],
+  currency: 'USD',
+  customCurrency: '',
+  theme: 'light',
+  exportDefault: 'monthly'
+};
 
 let categories = storage.get('sb_categories', DEFAULT_CATEGORIES);
 let transactions = storage.get('sb_transactions', []);
 let budgets = storage.get('sb_budgets', []);
+let settings = storage.get('sb_settings', DEFAULT_SETTINGS);
 
 /* DOM refs */
 const totalIncomeEl = document.getElementById('totalIncome');
 const totalExpenseEl = document.getElementById('totalExpense');
 const netBalanceEl = document.getElementById('netBalance');
-const txListEl = document.getElementById('txList');
 const txCountEl = document.getElementById('txCount');
+const transactionsTableBody = document.getElementById('transactionsTableBody');
 const budgetCardsEl = document.getElementById('budgetCards');
 const periodLabel = document.getElementById('periodLabel');
 const pieCtx = document.getElementById('pieChart').getContext('2d');
 let pieChart = null;
 
 /* Helpers */
-function saveAll(){ storage.set('sb_categories', categories); storage.set('sb_transactions', transactions); storage.set('sb_budgets', budgets); }
-function formatCurrency(v){ return '$'+Number(v||0).toFixed(2); }
-function formatDateTime(iso){ const d=new Date(iso); return d.toLocaleString(); }
+function saveAll() {
+  storage.set('sb_categories', categories);
+  storage.set('sb_transactions', transactions);
+  storage.set('sb_budgets', budgets);
+  storage.set('sb_settings', settings);
+}
+function formatCurrency(v){
+  const cur = settings.currency === 'custom' ? (settings.customCurrency || '$') : (settings.currency === 'USD' ? '$' : settings.currency === 'AED' ? 'AED' : settings.currency === 'INR' ? '₹' : settings.currency === 'NPR' ? 'Rs' : settings.currency);
+  return cur + Number(v||0).toFixed(2);
+}
+function formatDateTime(iso){ const d = new Date(iso); return d.toLocaleString(); }
 
 /* Date ranges */
-function getRange(period){
-  const now = new Date(); let start=new Date(now), end=new Date(now);
-  if(period==='today'){ start.setHours(0,0,0,0); end.setHours(23,59,59,999); }
-  else if(period==='week'){ start.setDate(now.getDate()-6); start.setHours(0,0,0,0); end.setHours(23,59,59,999); }
-  else if(period==='month'){ start=new Date(now.getFullYear(),now.getMonth(),1,0,0,0); end=new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59,999); }
-  return {start,end};
+function getRange(period) {
+  const now = new Date();
+  let start = new Date(now), end = new Date(now);
+  if (period === 'today') { start.setHours(0,0,0,0); end.setHours(23,59,59,999); }
+  else if (period === 'week') { start.setDate(now.getDate()-6); start.setHours(0,0,0,0); end.setHours(23,59,59,999); }
+  else if (period === 'month') { start = new Date(now.getFullYear(), now.getMonth(), 1,0,0,0); end = new Date(now.getFullYear(), now.getMonth()+1, 0,23,59,59,999); }
+  else if (period === 'all') { start = new Date(0); end = new Date(8640000000000000); }
+  return { start, end };
 }
 
-/* Render dashboard */
-function renderDashboard(period='today'){
-  const {start,end} = getRange(period);
-  periodLabel.textContent = period==='today'?'Today':period==='week'?'Last 7 days':'This month';
-  const filtered = transactions.filter(t=>{ const d=new Date(t.dateTime); return d>=start && d<=end; });
-  const income = filtered.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const expense = filtered.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+/* ---------- Rendering ---------- */
+function renderDashboard(period = settings.defaultDashboardView || 'today') {
+  const { start, end } = getRange(period);
+  periodLabel.textContent = period === 'today' ? 'Today' : period === 'week' ? 'Last 7 days' : period === 'month' ? 'This month' : 'All time';
+
+  const filtered = transactions.filter(t => {
+    const d = new Date(t.dateTime);
+    return d >= start && d <= end && !settings.hiddenCategories.includes(t.mainCategory);
+  });
+
+  const income = filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const expense = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   totalIncomeEl.textContent = formatCurrency(income);
   totalExpenseEl.textContent = formatCurrency(expense);
-  netBalanceEl.textContent = formatCurrency(income-expense);
+  netBalanceEl.textContent = formatCurrency(income - expense);
   txCountEl.textContent = filtered.length;
 
   // Pie chart
-  const pieData=[income||1,expense||1];
-  if(pieChart) pieChart.destroy();
-  pieChart = new Chart(pieCtx,{ type:'doughnut', data:{ labels:['Income','Expenses'], datasets:[{ data:pieData, backgroundColor:[getComputedStyle(document.documentElement).getPropertyValue('--accent-income').trim(), getComputedStyle(document.documentElement).getPropertyValue('--accent-expense').trim()] }] }, options:{ plugins:{ legend:{ position:'bottom' } } } });
-
-  // Recent transactions
-  txListEl.innerHTML='';
-  filtered.slice().sort((a,b)=>new Date(b.dateTime)-new Date(a.dateTime)).slice(0,8).forEach(tx=>{
-    const row=document.createElement('div'); row.className='row'; row.style.justifyContent='space-between'; row.style.padding='8px 0';
-    row.innerHTML = `<div style="min-width:0;"><div style="font-weight:600">${tx.mainCategory} <span class="small">(${tx.subCategory})</span></div><div class="small">${formatDateTime(tx.dateTime)} • ${tx.note||''}</div></div><div style="text-align:right;"><div style="font-weight:700;color:${tx.type==='income'?'var(--accent-income)':'var(--accent-expense)'}">${formatCurrency(tx.amount)}</div><div class="small">${tx.type.toUpperCase()}</div></div>`;
-    txListEl.appendChild(row);
+  const pieData = [income || 1, expense || 1];
+  if (pieChart) pieChart.destroy();
+  pieChart = new Chart(pieCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Income', 'Expenses'],
+      datasets: [{
+        data: pieData,
+        backgroundColor: [getComputedStyle(document.documentElement).getPropertyValue('--accent-income').trim(), getComputedStyle(document.documentElement).getPropertyValue('--accent-expense').trim()]
+      }]
+    },
+    options: { plugins: { legend: { position: 'bottom' } } }
   });
 
-  renderBudgets({start,end});
+  renderTransactionsTable(filtered);
+  renderBudgets({ start, end });
+}
+
+/* Build transactions table (Option C) */
+function renderTransactionsTable(list) {
+  transactionsTableBody.innerHTML = '';
+  // If transaction display settings are 'category', show totals by category
+  if (settings.transactionDisplay === 'category' || settings.transactionDisplay === 'both') {
+    // build category totals
+    const totals = {};
+    list.forEach(t => {
+      if (!totals[t.mainCategory]) totals[t.mainCategory] = 0;
+      totals[t.mainCategory] += t.amount * (t.type === 'expense' ? 1 : 0); // if you want separate income sums, adapt.
+    });
+    // Show category totals first (if both)
+    if (settings.transactionDisplay === 'category' || settings.transactionDisplay === 'both') {
+      Object.keys(totals).forEach(cat => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="muted">-</td><td><strong>${cat}</strong></td><td class="muted">-</td><td class="muted">Category total</td><td>${formatCurrency(totals[cat])}</td><td class="muted">-</td><td class="muted">-</td>`;
+        transactionsTableBody.appendChild(tr);
+      });
+    }
+    if (settings.transactionDisplay === 'category') return;
+  }
+
+  // show individual transactions
+  const recent = list.slice().sort((a,b)=> new Date(b.dateTime) - new Date(a.dateTime));
+  recent.forEach(tx => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${new Date(tx.dateTime).toLocaleDateString()}</td>
+      <td>${tx.mainCategory}</td>
+      <td>${tx.subCategory}</td>
+      <td>${tx.note || ''}</td>
+      <td style="font-weight:700;color:${tx.type==='income'?'var(--accent-income)':'var(--accent-expense)'}">${formatCurrency(tx.amount)}</td>
+      <td class="muted">${tx.type.toUpperCase()}</td>
+      <td>
+        <button class="icon-btn" data-id="${tx.id}" title="Edit" style="margin-right:6px;">✏️</button>
+        <button class="icon-btn" data-id="${tx.id}" title="Delete" style="background:#fff;border-radius:6px;color:#d32f2f;">🗑️</button>
+      </td>
+    `;
+    // bind actions
+    tr.querySelectorAll('.icon-btn')[0].addEventListener('click', ()=> openEditModal(tx.id));
+    tr.querySelectorAll('.icon-btn')[1].addEventListener('click', ()=> deleteTransaction(tx.id));
+    transactionsTableBody.appendChild(tr);
+  });
 }
 
 /* Render budgets */
-function renderBudgets(range=null){
-  budgetCardsEl.innerHTML='';
-  budgets.forEach(b=>{
-    const start=new Date(b.startDate), end=new Date(b.endDate);
-    const actual = transactions.filter(t=>{
-      const d=new Date(t.dateTime); if(d<start||d>end) return false;
-      if(b.categories && b.categories.length) return b.categories.includes(t.mainCategory);
+function renderBudgets(range = null) {
+  budgetCardsEl.innerHTML = '';
+  budgets.forEach(b => {
+    const start = new Date(b.startDate), end = new Date(b.endDate);
+    const actual = transactions.filter(t => {
+      const d = new Date(t.dateTime);
+      if (d < start || d > end) return false;
+      if (b.categories && b.categories.length) return b.categories.includes(t.mainCategory);
       return true;
-    }).filter(t=>t.type===b.type).reduce((s,t)=>s+t.amount,0);
+    }).filter(t => t.type === b.type).reduce((s,t)=>s+t.amount,0);
 
-    const percentage = (actual / (b.amount || 1))*100;
-    const remaining = b.amount-actual;
-    const exceeded = (b.type==='expense' && actual>b.amount) || (b.type==='income' && actual<b.amount);
-    const color = b.type==='income'?getComputedStyle(document.documentElement).getPropertyValue('--accent-income').trim():getComputedStyle(document.documentElement).getPropertyValue('--accent-expense').trim();
+    const percentage = (actual / (b.amount || 1)) * 100;
+    const remaining = b.amount - actual;
+    const exceeded = (b.type === 'expense' && actual > b.amount) || (b.type === 'income' && actual < b.amount);
+    const color = b.type === 'income' ? getComputedStyle(document.documentElement).getPropertyValue('--accent-income').trim() : getComputedStyle(document.documentElement).getPropertyValue('--accent-expense').trim();
 
-    const card=document.createElement('div'); card.className='card budget-card';
-    card.innerHTML = `<div style="display:flex;justify-content:space-between;"><div><strong>${b.type==='income'?'Income Target':'Expense Budget'}</strong><div class="small">${b.categories&&b.categories.length?b.categories.join(', '):'All categories'}</div></div><div style="text-align:right;"><div class="small">Amount</div><div style="font-weight:700">${formatCurrency(b.amount)}</div></div></div><div style="margin-top:8px;"><div class="small">Actual ${b.type==='income'?'Achieved':'Spent'}</div><div style="display:flex;justify-content:space-between;align-items:center;"><div style="width:75%"><div class="progress"><div class="fill" style="width:${Math.min(percentage,100)}%;background:${color}"></div></div></div><div style="width:20%;text-align:right;">${Math.round(percentage)}%</div></div><div class="small" style="margin-top:6px;">${exceeded? `<span style="color:${color}">${b.type==='expense'?'Exceeded':'Below target'}</span> • Remaining ${formatCurrency(remaining)}` : `Remaining ${formatCurrency(remaining)}`}</div></div>`;
+    const card = document.createElement('div'); card.className = 'card budget-card';
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;">
+        <div><strong>${b.type === 'income' ? 'Income Target' : 'Expense Budget'}</strong><div class="small">${b.categories && b.categories.length ? b.categories.join(', ') : 'All categories'}</div></div>
+        <div style="text-align:right;"><div class="small">Amount</div><div style="font-weight:700">${formatCurrency(b.amount)}</div></div>
+      </div>
+      <div style="margin-top:8px;">
+        <div class="small">Actual ${b.type === 'income' ? 'Achieved' : 'Spent'}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="width:75%"><div class="progress"><div class="fill" style="width:${Math.min(percentage,100)}%;background:${color}"></div></div></div>
+          <div style="width:20%;text-align:right;">${Math.round(percentage)}%</div>
+        </div>
+        <div class="small" style="margin-top:6px;">${exceeded ? `<span style="color:${color}">${b.type==='expense'?'Exceeded':'Below target'}</span> • Remaining ${formatCurrency(remaining)}` : `Remaining ${formatCurrency(remaining)}`}</div>
+      </div>`;
     budgetCardsEl.appendChild(card);
   });
 }
 
-/* Render settings */
-function renderSettings(){
-  const categoriesList=document.getElementById('categoriesList'); categoriesList.innerHTML='';
-  ['income','expense'].forEach(type=>{
-    const title=document.createElement('div'); title.innerHTML=`<strong style="margin-top:8px">${type.toUpperCase()}</strong>`;
-    categoriesList.appendChild(title);
+/* Render settings UI */
+function renderSettingsUI() {
+  // set inputs from settings
+  document.getElementById('defaultDashboardView').value = settings.defaultDashboardView || 'today';
+  document.getElementById('defaultReportView').value = settings.defaultReportView || 'month';
+  document.getElementById('transactionDisplay').value = settings.transactionDisplay || 'individual';
+  document.getElementById('currencySelect').value = settings.currency || 'USD';
+  document.getElementById('currencyCustom').style.display = settings.currency === 'custom' ? 'block' : 'none';
+  document.getElementById('currencyCustom').value = settings.customCurrency || '';
+  document.getElementById('themeSelect').value = settings.theme || 'light';
+  document.getElementById('exportDefault').value = settings.exportDefault || 'monthly';
+
+  // categories list
+  const categoriesList = document.getElementById('categoriesList'); categoriesList.innerHTML = '';
+  ['income','expense'].forEach(type => {
+    const title = document.createElement('div'); title.innerHTML = `<strong style="margin-top:8px">${type.toUpperCase()}</strong>`; categoriesList.appendChild(title);
     categories.filter(c=>c.type===type).forEach(c=>{
-      const row=document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.padding='6px 0';
-      row.innerHTML = `<div><div style="font-weight:600">${c.name}</div><div class="small">${(c.sub||[]).join(', ')}</div></div><div><button data-id="${c.id}" class="delCat">Del</button></div>`;
+      const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.padding='6px 0';
+      const hidden = settings.hiddenCategories.includes(c.name);
+      row.innerHTML = `<div><div style="font-weight:600">${c.name} ${hidden?'<span class="muted">(hidden)</span>':''}</div><div class="small">${(c.sub||[]).join(', ')}</div></div><div><button data-id="${c.id}" class="toggleCat">${hidden? 'Show' : 'Hide'}</button> <button data-id="${c.id}" class="delCat">Del</button></div>`;
       categoriesList.appendChild(row);
     });
   });
+
+  // budget category chips
   renderBudgetCategoryChips();
 }
 
-/* Budget chips */
-function renderBudgetCategoryChips(){
-  const container=document.getElementById('budgetCategoryChips'); container.innerHTML='';
-  const type=document.getElementById('budgetType').value;
+/* Budget category chips builder */
+function renderBudgetCategoryChips() {
+  const container = document.getElementById('budgetCategoryChips'); container.innerHTML = '';
+  const type = document.getElementById('budgetType').value;
   categories.filter(c=>c.type===type).forEach(c=>{
-    const chip=document.createElement('span'); chip.textContent=c.name; chip.className='chip'; chip.dataset.name=c.name;
-    chip.onclick=()=>chip.classList.toggle('active');
+    const chip = document.createElement('span'); chip.textContent = c.name; chip.className='chip'; chip.dataset.name = c.name;
+    chip.onclick = () => chip.classList.toggle('active');
     container.appendChild(chip);
   });
 }
 
-/* Transaction chips */
-function populateTxMainChips(){
-  const type=document.getElementById('txType').value; const container=document.getElementById('txMainChips'); container.innerHTML='';
+/* Transaction chips (add form) */
+function populateTxMainChips() {
+  const type = document.getElementById('txType').value;
+  const container = document.getElementById('txMainChips'); container.innerHTML = '';
   categories.filter(c=>c.type===type).forEach(c=>{
-    const chip=document.createElement('span'); chip.className='chip'; chip.textContent=c.name; chip.dataset.name=c.name;
-    chip.onclick=()=>{ document.querySelectorAll('#txMainChips .chip').forEach(n=>n.classList.remove('active')); chip.classList.add('active'); populateTxSubChips(c.name); };
+    const chip = document.createElement('span'); chip.className='chip'; chip.textContent=c.name; chip.dataset.name=c.name;
+    chip.onclick = ()=>{ document.querySelectorAll('#txMainChips .chip').forEach(n=>n.classList.remove('active')); chip.classList.add('active'); populateTxSubChips(c.name); };
     container.appendChild(chip);
   });
   document.getElementById('txSubChips').innerHTML='';
 }
-function populateTxSubChips(mainName){
-  const cat=categories.find(c=>c.name===mainName); if(!cat) return;
-  const container=document.getElementById('txSubChips'); container.innerHTML='';
-  (cat.sub||[]).forEach(sub=>{
-    const chip=document.createElement('span'); chip.className='chip'; chip.textContent=sub;
-    chip.onclick=()=>{ document.querySelectorAll('#txSubChips .chip').forEach(n=>n.classList.remove('active')); chip.classList.add('active'); };
+function populateTxSubChips(mainName) {
+  const cat = categories.find(c=>c.name===mainName);
+  const container = document.getElementById('txSubChips'); container.innerHTML = '';
+  (cat && cat.sub ? cat.sub : []).forEach(sub=>{
+    const chip = document.createElement('span'); chip.className='chip'; chip.textContent=sub;
+    chip.onclick = ()=> { document.querySelectorAll('#txSubChips .chip').forEach(n=>n.classList.remove('active')); chip.classList.add('active'); };
     container.appendChild(chip);
   });
 }
 
-/* Add / Save helpers */
-function addCategory(c){ c.id=c.type+'-'+Date.now(); c.sub=c.sub||[]; categories.push(c); saveAll(); renderSettings(); }
-function addBudget(b){ b.id='b-'+Date.now(); budgets.push(b); saveAll(); renderSettings(); renderDashboard(); }
-function addTransactionObj(tx){ tx.id='tx-'+Date.now(); transactions.push(tx); saveAll(); renderCurrentView(); }
-
-/* Render current view helper */
-function renderCurrentView(){
-  const view=document.querySelector('#bottomNav button.active').dataset.view;
-  if(view==='dashboard') renderDashboard('today');
-  else if(view==='settings') renderSettings();
-  else if(view==='reports') renderReport();
+/* Edit modal chips */
+function populateEditMainChips() {
+  const type = document.getElementById('editTxType').value;
+  const container = document.getElementById('editTxMainChips'); container.innerHTML = '';
+  categories.filter(c=>c.type===type).forEach(c=>{
+    const chip = document.createElement('span'); chip.className='chip'; chip.textContent=c.name; chip.dataset.name=c.name;
+    chip.onclick = ()=>{ document.querySelectorAll('#editTxMainChips .chip').forEach(n=>n.classList.remove('active')); chip.classList.add('active'); populateEditSubChips(c.name); };
+    container.appendChild(chip);
+  });
+  document.getElementById('editTxSubChips').innerHTML='';
+}
+function populateEditSubChips(mainName) {
+  const cat = categories.find(c=>c.name===mainName);
+  const container = document.getElementById('editTxSubChips'); container.innerHTML = '';
+  (cat && cat.sub ? cat.sub : []).forEach(sub=>{
+    const chip = document.createElement('span'); chip.className='chip'; chip.textContent=sub;
+    chip.onclick = ()=>{ document.querySelectorAll('#editTxSubChips .chip').forEach(n=>n.classList.remove('active')); chip.classList.add('active'); };
+    container.appendChild(chip);
+  });
 }
 
-/* Event wiring */
-document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('reportTo').value=isoDate(today);
-  const weekStart=new Date(); weekStart.setDate(today.getDate()-6);
-  document.getElementById('reportFrom').value=isoDate(weekStart);
+/* ---------- CRUD for transactions ---------- */
+function addTransactionObj(tx){
+  tx.id = 'tx-' + Date.now();
+  transactions.push(tx);
+  saveAll();
+  renderCurrentView();
+}
 
-  document.querySelectorAll('.periodBtn').forEach(b=>b.addEventListener('click', ev=>renderDashboard(ev.currentTarget.dataset.period)));
-  document.getElementById('openAdd').addEventListener('click', ()=>{
-    document.getElementById('addForm').style.display='block';
-    const sevenDaysAgo=new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate()-7);
-    document.getElementById('txDate').min=isoDate(sevenDaysAgo);
-    document.getElementById('txDate').max=isoDate(new Date());
-    document.getElementById('txDate').value=isoDate(new Date());
-    document.getElementById('txTime').value=new Date().toTimeString().slice(0,5);
+function updateTransaction(updatedTx) {
+  transactions = transactions.map(tx => tx.id === updatedTx.id ? updatedTx : tx);
+  saveAll();
+  renderCurrentView();
+}
+
+function deleteTransaction(id) {
+  if (!confirm('Delete this transaction?')) return;
+  transactions = transactions.filter(tx => tx.id !== id);
+  saveAll();
+  renderCurrentView();
+}
+
+/* ---------- Edit flow ---------- */
+function openEditModal(id) {
+  const tx = transactions.find(t => t.id === id);
+  if (!tx) return alert('Transaction not found');
+  document.getElementById('editTxId').value = tx.id;
+  document.getElementById('editTxType').value = tx.type;
+  document.getElementById('editTxAmount').value = tx.amount;
+  document.getElementById('editTxNote').value = tx.note || '';
+  const d = new Date(tx.dateTime);
+  document.getElementById('editTxDate').value = isoDate(d);
+  document.getElementById('editTxTime').value = d.toTimeString().slice(0,5);
+  populateEditMainChips();
+  // mark main and sub chips
+  setTimeout(()=> {
+    const mainChip = Array.from(document.querySelectorAll('#editTxMainChips .chip')).find(c => c.dataset.name === tx.mainCategory);
+    if (mainChip) { mainChip.classList.add('active'); populateEditSubChips(tx.mainCategory); }
+    setTimeout(()=>{
+      const subChip = Array.from(document.querySelectorAll('#editTxSubChips .chip')).find(c => c.textContent === tx.subCategory);
+      if (subChip) subChip.classList.add('active');
+    },50);
+  },50);
+  document.getElementById('editForm').style.display = 'block';
+}
+
+/* ---------- Render reports ---------- */
+function renderReport(){
+  const from = document.getElementById('reportFrom').value ? new Date(document.getElementById('reportFrom').value+'T00:00:00') : new Date(0);
+  const to = document.getElementById('reportTo').value ? new Date(document.getElementById('reportTo').value+'T23:59:59') : new Date();
+  const type = document.getElementById('reportType').value;
+  const filtered = transactions.filter(t => {
+    const d = new Date(t.dateTime);
+    return d >= from && d <= to && (type === 'all' ? true : t.type === type) && !settings.hiddenCategories.includes(t.mainCategory);
+  });
+  const income = filtered.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expense = filtered.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  document.getElementById('reportIncome').textContent = formatCurrency(income);
+  document.getElementById('reportExpense').textContent = formatCurrency(expense);
+
+  const list = document.getElementById('reportTxList'); list.innerHTML = '';
+  filtered.slice().sort((a,b)=>new Date(b.dateTime)-new Date(a.dateTime)).forEach(t=>{
+    const r = document.createElement('div'); r.style.padding='8px 0';
+    r.innerHTML = `<div style="display:flex;justify-content:space-between;"><div><strong>${t.mainCategory} - ${t.subCategory}</strong><div class="small">${formatDateTime(t.dateTime)}</div><div class="small">${t.note || ''}</div></div><div style="text-align:right">${formatCurrency(t.amount)}<div class="small">${t.type.toUpperCase()}</div><div style="margin-top:6px;"><button class="icon-btn" data-id="${t.id}" title="Edit">✏️</button> <button class="icon-btn" data-id="${t.id}" title="Delete" style="color:#d32f2f">🗑️</button></div></div></div>`;
+    const editBtn = r.querySelector('button[title="Edit"]'); const delBtn = r.querySelector('button[title="Delete"]');
+    editBtn.addEventListener('click', ()=> openEditModal(t.id));
+    delBtn.addEventListener('click', ()=> deleteTransaction(t.id));
+    list.appendChild(r);
+  });
+
+  return { filtered, income, expense, from, to };
+}
+
+/* ---------- Export XLSX ---------- */
+function exportReportToExcel(dataObj){
+  const { filtered, income, expense, from, to } = dataObj;
+  const wb = XLSX.utils.book_new();
+  const summary = [['Report From', isoDate(from)], ['Report To', isoDate(to)], ['Total Income', income], ['Total Expense', expense], ['Net Balance', income - expense]];
+  const ws1 = XLSX.utils.aoa_to_sheet(summary); XLSX.utils.book_append_sheet(wb, ws1, 'Summary');
+  const rows = [['Date','Type','Category','Subcategory','Amount','Note']];
+  filtered.forEach(t => rows.push([ new Date(t.dateTime).toLocaleString(), t.type, t.mainCategory, t.subCategory, t.amount, t.note || '' ]));
+  const ws2 = XLSX.utils.aoa_to_sheet(rows); XLSX.utils.book_append_sheet(wb, ws2, 'Transactions');
+  const brows = [['Type','Categories','Amount','Start','End']];
+  budgets.forEach(b => brows.push([b.type, b.categories ? b.categories.join(',') : 'All', b.amount, b.startDate, b.endDate]));
+  const ws3 = XLSX.utils.aoa_to_sheet(brows); XLSX.utils.book_append_sheet(wb, ws3, 'Budgets');
+  const wbout = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+  const blob = new Blob([wbout], { type: 'application/octet-stream' });
+  saveAs(blob, `smartbudget-report-${isoDate(from)}_to_${isoDate(to)}.xlsx`);
+}
+
+/* ---------- Export PDF (charts + summary + table) ---------- */
+async function exportReportToPDF(dataObj) {
+  const { filtered, income, expense, from, to } = dataObj;
+  // Capture chart and report area
+  const chartEl = document.getElementById('chartCard');
+  // create a temporary container to render report summary + table for PDF
+  const tmp = document.createElement('div');
+  tmp.style.padding = '12px'; tmp.style.background = '#fff'; tmp.style.color = '#000'; tmp.style.width = '800px';
+  tmp.innerHTML = `<h2>SmartBudget Report</h2><div><strong>From:</strong> ${isoDate(from)} <strong>To:</strong> ${isoDate(to)}</div><div style="margin-top:8px;"><strong>Total Income:</strong> ${formatCurrency(income)} <strong style="margin-left:12px">Total Expense:</strong> ${formatCurrency(expense)}</div>`;
+  // add small transaction table
+  const table = document.createElement('table'); table.style.width='100%'; table.style.borderCollapse='collapse'; table.innerHTML = `<thead><tr><th style="border-bottom:1px solid #ddd;padding:6px">Date</th><th style="border-bottom:1px solid #ddd;padding:6px">Category</th><th style="border-bottom:1px solid #ddd;padding:6px">Sub</th><th style="border-bottom:1px solid #ddd;padding:6px">Amount</th></tr></thead>`;
+  const tbody = document.createElement('tbody');
+  filtered.forEach(t => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="padding:6px;border-bottom:1px solid #eee">${new Date(t.dateTime).toLocaleString()}</td><td style="padding:6px;border-bottom:1px solid #eee">${t.mainCategory}</td><td style="padding:6px;border-bottom:1px solid #eee">${t.subCategory}</td><td style="padding:6px;border-bottom:1px solid #eee">${formatCurrency(t.amount)}</td>`;
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  tmp.appendChild(table);
+
+  document.body.appendChild(tmp);
+  // capture chart and tmp
+  try {
+    const chartCanvas = chartEl.querySelector('canvas');
+    // capture chart image and tmp area
+    const chartImage = await html2canvas(chartCanvas, { scale:2 });
+    const tmpImage = await html2canvas(tmp, { scale:2 });
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p','pt','a4');
+    // add tmpImage (summary + table)
+    const imgData1 = tmpImage.toDataURL('image/png');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgProps = pdf.getImageProperties(imgData1);
+    const ratio = imgProps.width / pageWidth;
+    const imgHeight = imgProps.height / ratio;
+    pdf.addImage(imgData1, 'PNG', 0, 0, pageWidth, imgHeight);
+    // add new page for chart
+    pdf.addPage();
+    const imgData2 = chartImage.toDataURL('image/png');
+    const imgProps2 = pdf.getImageProperties(imgData2);
+    const ratio2 = imgProps2.width / pageWidth;
+    const imgHeight2 = imgProps2.height / ratio2;
+    pdf.addImage(imgData2, 'PNG', 0, 20, pageWidth, imgHeight2);
+    pdf.save(`smartbudget-report-${isoDate(from)}_to_${isoDate(to)}.pdf`);
+  } catch (e) {
+    alert('PDF export failed: ' + (e.message || e));
+  } finally {
+    tmp.remove();
+  }
+}
+
+/* ---------- UI wiring ---------- */
+document.addEventListener('DOMContentLoaded', () => {
+  // apply theme
+  applyTheme(settings.theme || 'light');
+
+  // populate default report dates (last week)
+  document.getElementById('reportTo').value = isoDate(today);
+  const weekStart = new Date(); weekStart.setDate(today.getDate() - 6);
+  document.getElementById('reportFrom').value = isoDate(weekStart);
+
+  // Populate UI initial
+  document.querySelectorAll('.periodBtn').forEach(b => b.addEventListener('click', ev => renderDashboard(ev.currentTarget.dataset.period)));
+  document.getElementById('openAdd').addEventListener('click', ()=> {
+    document.getElementById('addForm').style.display = 'block';
+    document.getElementById('addFormTitle').textContent = 'Add Transaction';
+    const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate()-7);
+    document.getElementById('txDate').min = isoDate(sevenDaysAgo);
+    document.getElementById('txDate').max = isoDate(new Date());
+    document.getElementById('txDate').value = isoDate(new Date());
+    document.getElementById('txTime').value = new Date().toTimeString().slice(0,5);
     populateTxMainChips();
   });
-  document.getElementById('closeForm').addEventListener('click', ()=>document.getElementById('addForm').style.display='none');
+  document.getElementById('closeForm').addEventListener('click', ()=> document.getElementById('addForm').style.display='none');
   document.getElementById('txType').addEventListener('change', populateTxMainChips);
-
-  document.getElementById('saveTx').addEventListener('click', ()=>{
-    const type=document.getElementById('txType').value;
-    const amount=parseFloat(document.getElementById('txAmount').value);
-    const main=Array.from(document.querySelectorAll('#txMainChips .chip.active')).map(n=>n.dataset.name)[0];
-    const sub=Array.from(document.querySelectorAll('#txSubChips .chip.active')).map(n=>n.textContent)[0];
-    const note=document.getElementById('txNote').value.trim();
-    const date=document.getElementById('txDate').value;
-    const time=document.getElementById('txTime').value||'00:00';
-    if(!main){ alert('Select main category'); return; }
-    if(!sub){ alert('Select subcategory'); return; }
-    if(!amount || amount<=0){ alert('Enter valid amount'); return; }
-    const sel=new Date(date+'T'+time+':00');
-    const sevenDaysAgo=new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate()-7); sevenDaysAgo.setHours(0,0,0,0);
-    if(sel<sevenDaysAgo){ alert('You can only select dates up to 7 days in the past'); return; }
-    if(sel>new Date()){ alert('Cannot select future date'); return; }
-    addTransactionObj({ type, mainCategory:main, subCategory:sub, amount, note, dateTime:sel.toISOString() });
+  document.getElementById('saveTx').addEventListener('click', ()=> {
+    const type = document.getElementById('txType').value;
+    const amount = parseFloat(document.getElementById('txAmount').value);
+    const main = Array.from(document.querySelectorAll('#txMainChips .chip.active')).map(n=>n.dataset.name)[0];
+    const sub = Array.from(document.querySelectorAll('#txSubChips .chip.active')).map(n=>n.textContent)[0];
+    const note = document.getElementById('txNote').value.trim();
+    const date = document.getElementById('txDate').value;
+    const time = document.getElementById('txTime').value || '00:00';
+    if (!main) { alert('Select main category'); return; }
+    if (!sub) { alert('Select subcategory'); return; }
+    if (!amount || amount <= 0) { alert('Enter valid amount'); return; }
+    const sel = new Date(date + 'T' + time + ':00');
+    const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7); sevenDaysAgo.setHours(0,0,0,0);
+    if (sel < sevenDaysAgo) { alert('You can only select dates up to 7 days in the past'); return; }
+    if (sel > new Date()) { alert('Cannot select future date'); return; }
+    addTransactionObj({ type, mainCategory: main, subCategory: sub, amount, note, dateTime: sel.toISOString() });
     document.getElementById('addForm').style.display='none';
     document.getElementById('txAmount').value=''; document.getElementById('txNote').value='';
   });
 
-  document.getElementById('addCategoryBtn').addEventListener('click', ()=>{
-    const type=document.getElementById('newCatType').value;
-    const name=document.getElementById('newCatName').value.trim();
-    const subs=document.getElementById('newCatSubs').value.split(',').map(s=>s.trim()).filter(Boolean);
-    if(!name){ alert('Enter category name'); return; }
-    addCategory({ name, type, sub:subs });
+  // edit modal wiring
+  document.getElementById('closeEdit').addEventListener('click', ()=> document.getElementById('editForm').style.display='none');
+  document.getElementById('editTxType').addEventListener('change', populateEditMainChips);
+  document.getElementById('updateTx').addEventListener('click', ()=> {
+    const id = document.getElementById('editTxId').value;
+    const type = document.getElementById('editTxType').value;
+    const amount = parseFloat(document.getElementById('editTxAmount').value);
+    const main = Array.from(document.querySelectorAll('#editTxMainChips .chip.active')).map(n=>n.dataset.name)[0];
+    const sub = Array.from(document.querySelectorAll('#editTxSubChips .chip.active')).map(n=>n.textContent)[0];
+    const note = document.getElementById('editTxNote').value.trim();
+    const date = document.getElementById('editTxDate').value;
+    const time = document.getElementById('editTxTime').value || '00:00';
+    if (!main) { alert('Select main category'); return; }
+    if (!sub) { alert('Select subcategory'); return; }
+    if (!amount || amount <= 0) { alert('Enter valid amount'); return; }
+    const sel = new Date(date + 'T' + time + ':00');
+    updateTransaction({ id, type, mainCategory: main, subCategory: sub, amount, note, dateTime: sel.toISOString() });
+    document.getElementById('editForm').style.display='none';
+  });
+
+  // category add/delete/toggle
+  document.getElementById('addCategoryBtn').addEventListener('click', ()=> {
+    const type = document.getElementById('newCatType').value;
+    const name = document.getElementById('newCatName').value.trim();
+    const subs = document.getElementById('newCatSubs').value.split(',').map(s=>s.trim()).filter(Boolean);
+    if (!name) { alert('Enter category name'); return; }
+    addCategory({ name, type, sub: subs });
     document.getElementById('newCatName').value=''; document.getElementById('newCatSubs').value='';
   });
 
-  document.getElementById('categoriesList').addEventListener('click',(e)=>{
-    if(e.target.matches('.delCat')){
-      const id=e.target.dataset.id;
-      if(confirm('Delete category?')){
-        categories=categories.filter(c=>c.id!==id);
-        saveAll(); renderSettings(); renderCurrentView();
-      }
+  document.getElementById('categoriesList').addEventListener('click', e => {
+    if (e.target.matches('.delCat')) {
+      const id = e.target.dataset.id;
+      if (!confirm('Delete category?')) return;
+      categories = categories.filter(c=>c.id !== id);
+      saveAll(); renderSettingsUI(); renderCurrentView();
+    }
+    if (e.target.matches('.toggleCat')) {
+      const id = e.target.dataset.id;
+      const c = categories.find(x=>x.id===id);
+      if (!c) return;
+      if (settings.hiddenCategories.includes(c.name)) settings.hiddenCategories = settings.hiddenCategories.filter(x=>x!==c.name);
+      else settings.hiddenCategories.push(c.name);
+      saveAll(); renderSettingsUI(); renderCurrentView();
     }
   });
 
+  // budgets
   document.getElementById('budgetType').addEventListener('change', renderBudgetCategoryChips);
-  document.getElementById('addBudgetBtn').addEventListener('click', ()=>{
-    const type=document.getElementById('budgetType').value;
-    const amount=parseFloat(document.getElementById('budgetAmount').value);
-    const start=document.getElementById('budgetStart').value;
-    const end=document.getElementById('budgetEnd').value;
-    const chosen=Array.from(document.querySelectorAll('#budgetCategoryChips .chip.active')).map(n=>n.dataset.name);
-    if(!amount || amount<=0){ alert('Enter budget amount'); return; }
-    if(!start || !end){ alert('Select start and end dates'); return; }
-    addBudget({ type, categories:chosen, amount, startDate:start, endDate:end });
-    document.getElementById('budgetAmount').value=''; renderSettings();
+  document.getElementById('addBudgetBtn').addEventListener('click', ()=> {
+    const type = document.getElementById('budgetType').value;
+    const amount = parseFloat(document.getElementById('budgetAmount').value);
+    const start = document.getElementById('budgetStart').value;
+    const end = document.getElementById('budgetEnd').value;
+    const chosen = Array.from(document.querySelectorAll('#budgetCategoryChips .chip.active')).map(n=>n.dataset.name);
+    if (!amount || amount <= 0) { alert('Enter budget amount'); return; }
+    if (!start || !end) { alert('Select start and end dates'); return; }
+    addBudget({ type, categories: chosen, amount, startDate: start, endDate: end });
+    document.getElementById('budgetAmount').value=''; renderSettingsUI();
   });
 
-  document.getElementById('applyReport').addEventListener('click', ()=>renderReport());
-  document.getElementById('downloadCsv').addEventListener('click', ()=>exportReportToExcel(renderReport()));
-  document.getElementById('downloadPdf').addEventListener('click', ()=>alert('PDF export coming soon'));
+  // report & export
+  document.getElementById('applyReport').addEventListener('click', ()=> {
+    const data = renderReport();
+  });
+  document.getElementById('downloadCsv').addEventListener('click', ()=> exportReportToExcel(renderReport()));
+  document.getElementById('downloadPdf').addEventListener('click', ()=> exportReportToPDF(renderReport()));
 
-  /* Bottom nav */
-  document.getElementById('bottomNav').addEventListener('click', e=>{
-    const btn=e.target.closest('#bottomNav button'); if(!btn) return;
+  // settings save
+  document.getElementById('currencySelect').addEventListener('change', (e) => {
+    document.getElementById('currencyCustom').style.display = e.target.value === 'custom' ? 'block' : 'none';
+  });
+  document.getElementById('saveSettings').addEventListener('click', ()=> {
+    settings.defaultDashboardView = document.getElementById('defaultDashboardView').value;
+    settings.defaultReportView = document.getElementById('defaultReportView').value;
+    settings.transactionDisplay = document.getElementById('transactionDisplay').value;
+    settings.currency = document.getElementById('currencySelect').value;
+    settings.customCurrency = document.getElementById('currencyCustom').value.trim();
+    settings.theme = document.getElementById('themeSelect').value;
+    settings.exportDefault = document.getElementById('exportDefault').value;
+    saveAll();
+    applyTheme(settings.theme);
+    alert('Settings saved');
+    renderCurrentView();
+  });
+  document.getElementById('resetSettings').addEventListener('click', ()=> {
+    if (!confirm('Reset settings to defaults?')) return;
+    settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+    saveAll();
+    renderSettingsUI(); applyTheme(settings.theme); renderCurrentView();
+  });
+
+  // bottom nav
+  document.getElementById('bottomNav').addEventListener('click', e => {
+    const btn = e.target.closest('#bottomNav button');
+    if (!btn) return;
     document.querySelectorAll('#bottomNav button').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active'); showView(btn.dataset.view);
+    btn.classList.add('active');
+    showView(btn.dataset.view);
   });
 
-  renderSettings(); renderDashboard('today');
+  // clicking edit/delete buttons inside transactions table are handled earlier by attaching listeners
+
+  // initial render
+  renderSettingsUI();
+  renderDashboard(settings.defaultDashboardView || 'today');
 });
 
-/* Show view */
-function showView(name){
-  document.getElementById('dashboardView').style.display=name==='dashboard'?'':'none';
-  document.getElementById('reportsView').style.display=name==='reports'?'':'none';
-  document.getElementById('settingsView').style.display=name==='settings'?'':'none';
-  if(name==='dashboard') renderDashboard('today');
-  if(name==='reports') renderReport();
-  if(name==='settings') renderSettings();
+/* ---------- Utility functions & helpers ---------- */
+function addCategory(c) { c.id = (c.type + '-' + Date.now()); c.sub = c.sub || []; categories.push(c); saveAll(); renderSettingsUI(); renderCurrentView(); }
+function addBudget(b) { b.id = 'b-' + Date.now(); budgets.push(b); saveAll(); renderSettingsUI(); renderCurrentView(); }
+function renderCurrentView() { const view = document.querySelector('#bottomNav button.active').dataset.view; if (view==='dashboard') renderDashboard(settings.defaultDashboardView||'today'); else if (view==='settings') renderSettingsUI(); else if (view==='reports') renderReport(); }
+
+/* ---------- Theme handling ---------- */
+function applyTheme(mode) {
+  const root = document.documentElement;
+  if (mode === 'auto') {
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+  } else {
+    root.setAttribute('data-theme', mode === 'dark' ? 'dark' : 'light');
+  }
 }
 
-/* Reports rendering */
-function renderReport(){
-  const from=document.getElementById('reportFrom').value?new Date(document.getElementById('reportFrom').value+'T00:00:00'):new Date(0);
-  const to=document.getElementById('reportTo').value?new Date(document.getElementById('reportTo').value+'T23:59:59'):new Date();
-  const type=document.getElementById('reportType').value;
-  const filtered=transactions.filter(t=>{ const d=new Date(t.dateTime); return d>=from && d<=to && (type==='all'?true:t.type===type); });
-  const income=filtered.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const expense=filtered.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  document.getElementById('reportIncome').textContent=formatCurrency(income);
-  document.getElementById('reportExpense').textContent=formatCurrency(expense);
-  const list=document.getElementById('reportTxList'); list.innerHTML='';
-  filtered.slice().sort((a,b)=>new Date(b.dateTime)-new Date(a.dateTime)).forEach(t=>{
-    const r=document.createElement('div'); r.style.padding='8px 0';
-    r.innerHTML=`<div style="display:flex;justify-content:space-between;"><div><strong>${t.mainCategory} - ${t.subCategory}</strong><div class="small">${formatDateTime(t.dateTime)}</div></div><div style="text-align:right">${formatCurrency(t.amount)}<div class="small">${t.type.toUpperCase()}</div></div></div>`;
-    list.appendChild(r);
-  });
-  return { filtered, income, expense, from, to };
+/* ---------- Show view ---------- */
+function showView(name) {
+  document.getElementById('dashboardView').style.display = name === 'dashboard' ? '' : 'none';
+  document.getElementById('reportsView').style.display = name === 'reports' ? '' : 'none';
+  document.getElementById('settingsView').style.display = name === 'settings' ? '' : 'none';
+  if (name === 'dashboard') renderDashboard(settings.defaultDashboardView || 'today');
+  if (name === 'reports') {
+    // apply default report view dates if set
+    const rv = settings.defaultReportView || 'month';
+    if (rv === 'today') { document.getElementById('reportFrom').value = isoDate(new Date()); document.getElementById('reportTo').value = isoDate(new Date()); }
+    else if (rv === 'week') { const s = new Date(); s.setDate(new Date().getDate()-6); document.getElementById('reportFrom').value = isoDate(s); document.getElementById('reportTo').value = isoDate(new Date()); }
+    else if (rv === 'month') { const s = new Date(new Date().getFullYear(), new Date().getMonth(), 1); document.getElementById('reportFrom').value = isoDate(s); document.getElementById('reportTo').value = isoDate(new Date()); }
+    else if (rv === 'all') { document.getElementById('reportFrom').value = ''; document.getElementById('reportTo').value = ''; }
+    renderReport();
+  }
+  if (name === 'settings') renderSettingsUI();
 }
 
-/* Export XLSX */
-function exportReportToExcel(dataObj){
-  const { filtered, income, expense, from, to }=dataObj;
-  const wb=XLSX.utils.book_new();
-  const summary=[['Report From', isoDate(from)],['Report To', isoDate(to)],['Total Income', income],['Total Expense', expense],['Net Balance', income-expense]];
-  const ws1=XLSX.utils.aoa_to_sheet(summary); XLSX.utils.book_append_sheet(wb, ws1,'Summary');
-  const rows=[['Date','Type','Category','Subcategory','Amount','Note']];
-  filtered.forEach(t=>rows.push([new Date(t.dateTime).toLocaleString(), t.type, t.mainCategory, t.subCategory, t.amount, t.note||'']));
-  const ws2=XLSX.utils.aoa_to_sheet(rows); XLSX.utils.book_append_sheet(wb, ws2,'Transactions');
-  const brows=[['Type','Categories','Amount','Start','End']];
-  budgets.forEach(b=>brows.push([b.type,b.categories?b.categories.join(','):'All',b.amount,b.startDate,b.endDate]));
-  const ws3=XLSX.utils.aoa_to_sheet(brows); XLSX.utils.book_append_sheet(wb, ws3,'Budgets');
-  const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
-  saveAs(new Blob([wbout],{type:'application/octet-stream'}), `smartbudget-report-${isoDate(from)}_to_${isoDate(to)}.xlsx`);
-}
+/* ---------- Expose helpers for debugging if needed ---------- */
+window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settings };
 
-/* Expose global helpers */
-window.appHelpers={ addCategory, addTransactionObj, addBudget, saveAll };
 </script>
-
-
-          
 </body>
 </html>
-
-
-
-
-
-
