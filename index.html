@@ -449,7 +449,6 @@ const storage = {
   get(k, fallback) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch(e){ return fallback; } },
   set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 };
-<script>
 const DEFAULT_CATEGORIES = [
   { id:'income-1', name:'Salary', type:'income', sub:['Regular Salary','Bonus','Commission'] },
   { id:'income-2', name:'Freelance', type:'income', sub:['Project','Consultation'] },
@@ -1032,6 +1031,12 @@ function applyTheme(mode) {
 }
 
 /* ---------- Show view ---------- */
+  function saveAll(){
+  storage.set('sb_categories', categories);
+  storage.set('sb_transactions', transactions);
+  storage.set('sb_budgets', budgets);
+}
+
 function showView(name) {
   document.getElementById('dashboardView').style.display = name === 'dashboard' ? '' : 'none';
   document.getElementById('reportsView').style.display = name === 'reports' ? '' : 'none';
@@ -1055,3 +1060,4 @@ window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settin
 
 </body>
 </html>
+
