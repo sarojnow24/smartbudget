@@ -5,15 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>SmartBudget Tracker (Web)</title>
 
-  <!-- Chart.js -->
+  <!-- Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <!-- SheetJS (xlsx) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <!-- FileSaver -->
   <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
-  <!-- jsPDF -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <!-- html2canvas -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <link rel="manifest" href="manifest.json">
@@ -26,7 +22,6 @@
       --accent-income: #4CAF50;
       --accent-expense: #F44336;
       --muted: #777;
-      --gap: 12px;
       font-family: Inter, system-ui, Arial, sans-serif;
       --text: #222;
       --surface: #fff;
@@ -61,13 +56,16 @@
     .progress { height:10px; background:#eee; border-radius:8px; overflow:hidden; }
     .progress > .fill { height:100%; background:var(--accent-income); width:0%; }
     .budget-card { margin-bottom:12px; }
-    .table { width:100%; border-collapse:collapse; margin-top:8px; }
+    .table { width:100%; border-collapse:collapse; margin-top:8px; min-width:700px; }
     .table th, .table td { padding:8px 6px; border-bottom:1px solid #eee; font-size:14px; text-align:left; }
     .table th { font-weight:700; color:var(--muted); font-size:12px; }
     .muted { color:var(--muted); font-size:12px; }
     .icon-btn { padding:6px 8px; border-radius:8px; border: none; cursor:pointer; background:transparent; }
     .danger { background:#d32f2f; color:white; border-radius:6px; padding:6px 8px; cursor:pointer; border:none; }
     .success { background:var(--accent-income); color:white; border-radius:6px; padding:6px 8px; cursor:pointer; border:none; }
+
+    /* Responsive table wrapper to prevent horizontal overflow */
+    .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
     /* Bottom nav */
     #bottomNav {
@@ -113,11 +111,10 @@
       overflow:auto;
     }
 
-    @media (min-width:720px){ .app{ padding:24px; } header h1{ font-size:22px; } .fab{ right:28px; bottom:140px;} }
+    @media (min-width:720px){ .app{ padding:24px; } header h1{ font-size:22px; } .fab{ right:28px; bottom:140px;} .table{ min-width:600px; } }
   </style>
 </head>
 <body>
-
   <div class="app" id="appRoot">
     <header>
       <h1>SmartBudget Tracker</h1>
@@ -167,25 +164,26 @@
           <div class="small"><span id="txCount">0</span> items</div>
         </div>
 
-        <!-- Table layout (Option C) -->
-        <table class="table" id="transactionsTable">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Category</th>
-              <th>Sub</th>
-              <th>Note</th>
-              <th>Amount</th>
-              <th>Type</th>
-              <th style="width:120px">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="transactionsTableBody"></tbody>
-        </table>
+        <!-- Table layout (Option C) wrapped for responsive -->
+        <div class="table-container">
+          <table class="table" id="transactionsTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Sub</th>
+                <th>Note</th>
+                <th>Amount</th>
+                <th>Type</th>
+                <th style="width:120px">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="transactionsTableBody"></tbody>
+          </table>
+        </div>
 
       </div>
     </div>
-
     <!-- REPORTS -->
     <div id="reportsView" style="display:none;">
       <div class="card">
@@ -451,7 +449,7 @@ const storage = {
   get(k, fallback) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch(e){ return fallback; } },
   set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 };
-
+<script>
 const DEFAULT_CATEGORIES = [
   { id:'income-1', name:'Salary', type:'income', sub:['Regular Salary','Bonus','Commission'] },
   { id:'income-2', name:'Freelance', type:'income', sub:['Project','Consultation'] },
@@ -553,20 +551,18 @@ function renderTransactionsTable(list) {
   transactionsTableBody.innerHTML = '';
   // If transaction display settings are 'category', show totals by category
   if (settings.transactionDisplay === 'category' || settings.transactionDisplay === 'both') {
-    // build category totals
+    // build category totals (expenses & income separately)
     const totals = {};
     list.forEach(t => {
-      if (!totals[t.mainCategory]) totals[t.mainCategory] = 0;
-      totals[t.mainCategory] += t.amount * (t.type === 'expense' ? 1 : 0); // if you want separate income sums, adapt.
+      if (!totals[t.mainCategory]) totals[t.mainCategory] = { income:0, expense:0 };
+      totals[t.mainCategory][t.type] += t.amount;
     });
     // Show category totals first (if both)
-    if (settings.transactionDisplay === 'category' || settings.transactionDisplay === 'both') {
-      Object.keys(totals).forEach(cat => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td class="muted">-</td><td><strong>${cat}</strong></td><td class="muted">-</td><td class="muted">Category total</td><td>${formatCurrency(totals[cat])}</td><td class="muted">-</td><td class="muted">-</td>`;
-        transactionsTableBody.appendChild(tr);
-      });
-    }
+    Object.keys(totals).forEach(cat => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="muted">-</td><td><strong>${cat}</strong></td><td class="muted">-</td><td class="muted">Category total</td><td>${formatCurrency(totals[cat].expense || 0)}</td><td class="muted">-</td><td class="muted">-</td>`;
+      transactionsTableBody.appendChild(tr);
+    });
     if (settings.transactionDisplay === 'category') return;
   }
 
@@ -582,14 +578,19 @@ function renderTransactionsTable(list) {
       <td style="font-weight:700;color:${tx.type==='income'?'var(--accent-income)':'var(--accent-expense)'}">${formatCurrency(tx.amount)}</td>
       <td class="muted">${tx.type.toUpperCase()}</td>
       <td>
-        <button class="icon-btn" data-id="${tx.id}" title="Edit" style="margin-right:6px;">✏️</button>
-        <button class="icon-btn" data-id="${tx.id}" title="Delete" style="background:#fff;border-radius:6px;color:#d32f2f;">🗑️</button>
+        <button class="icon-btn edit-btn" data-id="${tx.id}" title="Edit" style="margin-right:6px;">✏️</button>
+        <button class="icon-btn del-btn" data-id="${tx.id}" title="Delete" style="color:#d32f2f">🗑️</button>
       </td>
     `;
-    // bind actions
-    tr.querySelectorAll('.icon-btn')[0].addEventListener('click', ()=> openEditModal(tx.id));
-    tr.querySelectorAll('.icon-btn')[1].addEventListener('click', ()=> deleteTransaction(tx.id));
     transactionsTableBody.appendChild(tr);
+  });
+
+  // attach event delegation for edit/delete (to keep DOM ops light)
+  Array.from(document.querySelectorAll('.edit-btn')).forEach(b => {
+    b.addEventListener('click', () => openEditModal(b.dataset.id));
+  });
+  Array.from(document.querySelectorAll('.del-btn')).forEach(b => {
+    b.addEventListener('click', () => deleteTransaction(b.dataset.id));
   });
 }
 
@@ -708,7 +709,8 @@ function populateEditSubChips(mainName) {
     container.appendChild(chip);
   });
 }
-
+</script>
+<script>
 /* ---------- CRUD for transactions ---------- */
 function addTransactionObj(tx){
   tx.id = 'tx-' + Date.now();
@@ -798,55 +800,70 @@ function exportReportToExcel(dataObj){
   saveAs(blob, `smartbudget-report-${isoDate(from)}_to_${isoDate(to)}.xlsx`);
 }
 
-/* ---------- Export PDF (charts + summary + table) ---------- */
+/* ---------- Export PDF (fixed, JPEG conversion) ---------- */
 async function exportReportToPDF(dataObj) {
   const { filtered, income, expense, from, to } = dataObj;
-  // Capture chart and report area
-  const chartEl = document.getElementById('chartCard');
-  // create a temporary container to render report summary + table for PDF
-  const tmp = document.createElement('div');
-  tmp.style.padding = '12px'; tmp.style.background = '#fff'; tmp.style.color = '#000'; tmp.style.width = '800px';
-  tmp.innerHTML = `<h2>SmartBudget Report</h2><div><strong>From:</strong> ${isoDate(from)} <strong>To:</strong> ${isoDate(to)}</div><div style="margin-top:8px;"><strong>Total Income:</strong> ${formatCurrency(income)} <strong style="margin-left:12px">Total Expense:</strong> ${formatCurrency(expense)}</div>`;
-  // add small transaction table
-  const table = document.createElement('table'); table.style.width='100%'; table.style.borderCollapse='collapse'; table.innerHTML = `<thead><tr><th style="border-bottom:1px solid #ddd;padding:6px">Date</th><th style="border-bottom:1px solid #ddd;padding:6px">Category</th><th style="border-bottom:1px solid #ddd;padding:6px">Sub</th><th style="border-bottom:1px solid #ddd;padding:6px">Amount</th></tr></thead>`;
-  const tbody = document.createElement('tbody');
-  filtered.forEach(t => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td style="padding:6px;border-bottom:1px solid #eee">${new Date(t.dateTime).toLocaleString()}</td><td style="padding:6px;border-bottom:1px solid #eee">${t.mainCategory}</td><td style="padding:6px;border-bottom:1px solid #eee">${t.subCategory}</td><td style="padding:6px;border-bottom:1px solid #eee">${formatCurrency(t.amount)}</td>`;
-    tbody.appendChild(tr);
-  });
-  table.appendChild(tbody);
-  tmp.appendChild(table);
 
-  document.body.appendChild(tmp);
-  // capture chart and tmp
   try {
-    const chartCanvas = chartEl.querySelector('canvas');
-    // capture chart image and tmp area
-    const chartImage = await html2canvas(chartCanvas, { scale:2 });
-    const tmpImage = await html2canvas(tmp, { scale:2 });
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF('p','pt','a4');
-    // add tmpImage (summary + table)
-    const imgData1 = tmpImage.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'pt', 'a4');
     const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const imgProps = pdf.getImageProperties(imgData1);
-    const ratio = imgProps.width / pageWidth;
-    const imgHeight = imgProps.height / ratio;
-    pdf.addImage(imgData1, 'PNG', 0, 0, pageWidth, imgHeight);
-    // add new page for chart
-    pdf.addPage();
-    const imgData2 = chartImage.toDataURL('image/png');
-    const imgProps2 = pdf.getImageProperties(imgData2);
-    const ratio2 = imgProps2.width / pageWidth;
-    const imgHeight2 = imgProps2.height / ratio2;
-    pdf.addImage(imgData2, 'PNG', 0, 20, pageWidth, imgHeight2);
-    pdf.save(`smartbudget-report-${isoDate(from)}_to_${isoDate(to)}.pdf`);
+
+    // 1) Build a temporary printable container
+    const tmp = document.createElement('div');
+    tmp.style.width = "900px";
+    tmp.style.padding = "20px";
+    tmp.style.background = "#ffffff";
+    tmp.style.color = "#000000";
+    tmp.innerHTML = `
+      <h2>SmartBudget Report</h2>
+      <p><strong>From:</strong> ${isoDate(from)} &nbsp;&nbsp; <strong>To:</strong> ${isoDate(to)}</p>
+      <p><strong>Total Income:</strong> ${formatCurrency(income)}<br>
+      <strong>Total Expense:</strong> ${formatCurrency(expense)}<br>
+      <strong>Net Balance:</strong> ${formatCurrency(income - expense)}</p>
+      <br>
+      <table border="1" cellspacing="0" cellpadding="5" style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="border:1px solid #ddd;padding:6px">Date</th>
+            <th style="border:1px solid #ddd;padding:6px">Type</th>
+            <th style="border:1px solid #ddd;padding:6px">Main Category</th>
+            <th style="border:1px solid #ddd;padding:6px">Sub Category</th>
+            <th style="border:1px solid #ddd;padding:6px">Amount</th>
+            <th style="border:1px solid #ddd;padding:6px">Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filtered.map(t => `
+            <tr>
+              <td style="border:1px solid #eee;padding:6px">${new Date(t.dateTime).toLocaleString()}</td>
+              <td style="border:1px solid #eee;padding:6px">${t.type}</td>
+              <td style="border:1px solid #eee;padding:6px">${t.mainCategory}</td>
+              <td style="border:1px solid #eee;padding:6px">${t.subCategory}</td>
+              <td style="border:1px solid #eee;padding:6px">${formatCurrency(t.amount)}</td>
+              <td style="border:1px solid #eee;padding:6px">${t.note || ''}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    document.body.appendChild(tmp);
+
+    // 2) Take snapshot using html2canvas
+    const canvas = await html2canvas(tmp, { scale: 1.5, backgroundColor: "#ffffff" });
+    document.body.removeChild(tmp);
+
+    // 3) Convert to JPEG (always works with jsPDF)
+    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+
+    // 4) Fit into A4 page
+    const imgWidth = pageWidth;
+    const imgHeight = canvas.height * (imgWidth / canvas.width);
+
+    pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
+    pdf.save(`SmartBudget_Report_${isoDate(from)}_to_${isoDate(to)}.pdf`);
   } catch (e) {
-    alert('PDF export failed: ' + (e.message || e));
-  } finally {
-    tmp.remove();
+    alert("PDF export failed: " + (e.message || e));
   }
 }
 
@@ -956,9 +973,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // report & export
-  document.getElementById('applyReport').addEventListener('click', ()=> {
-    const data = renderReport();
-  });
+  document.getElementById('applyReport').addEventListener('click', ()=> { renderReport(); });
   document.getElementById('downloadCsv').addEventListener('click', ()=> exportReportToExcel(renderReport()));
   document.getElementById('downloadPdf').addEventListener('click', ()=> exportReportToPDF(renderReport()));
 
@@ -994,8 +1009,6 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.classList.add('active');
     showView(btn.dataset.view);
   });
-
-  // clicking edit/delete buttons inside transactions table are handled earlier by attaching listeners
 
   // initial render
   renderSettingsUI();
@@ -1038,7 +1051,7 @@ function showView(name) {
 
 /* ---------- Expose helpers for debugging if needed ---------- */
 window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settings };
-
 </script>
+
 </body>
 </html>
