@@ -102,6 +102,12 @@
     #bottomNav button span { font-size: 20px; }
     #bottomNav button.active { color: #1976d2; }
 
+    .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    }
+
     /* modal */
     .modal {
       position: fixed;
@@ -170,7 +176,8 @@
         </div>
 
         <!-- Table layout (Option C) -->
-        <table class="table" id="transactionsTable">
+       <div class="table-wrapper">
+          <table class="table" id="transactionsTable">
           <thead>
             <tr>
               <th>Date</th>
@@ -183,7 +190,8 @@
             </tr>
           </thead>
           <tbody id="transactionsTableBody"></tbody>
-        </table>
+           </table>
+        </div>
 
       </div>
     </div>
@@ -808,54 +816,69 @@ function exportReportToExcel(dataObj){
 /* ---------- Export PDF (charts + summary + table) ---------- */
 async function exportReportToPDF(dataObj) {
   const { filtered, income, expense, from, to } = dataObj;
-  // Capture chart and report area
-  const chartEl = document.getElementById('chartCard');
-  // create a temporary container to render report summary + table for PDF
-  const tmp = document.createElement('div');
-  tmp.style.padding = '12px'; tmp.style.background = '#fff'; tmp.style.color = '#000'; tmp.style.width = '800px';
-  tmp.innerHTML = `<h2>SmartBudget Report</h2><div><strong>From:</strong> ${isoDate(from)} <strong>To:</strong> ${isoDate(to)}</div><div style="margin-top:8px;"><strong>Total Income:</strong> ${formatCurrency(income)} <strong style="margin-left:12px">Total Expense:</strong> ${formatCurrency(expense)}</div>`;
-  // add small transaction table
-  const table = document.createElement('table'); table.style.width='100%'; table.style.borderCollapse='collapse'; table.innerHTML = `<thead><tr><th style="border-bottom:1px solid #ddd;padding:6px">Date</th><th style="border-bottom:1px solid #ddd;padding:6px">Category</th><th style="border-bottom:1px solid #ddd;padding:6px">Sub</th><th style="border-bottom:1px solid #ddd;padding:6px">Amount</th></tr></thead>`;
-  const tbody = document.createElement('tbody');
-  filtered.forEach(t => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td style="padding:6px;border-bottom:1px solid #eee">${new Date(t.dateTime).toLocaleString()}</td><td style="padding:6px;border-bottom:1px solid #eee">${t.mainCategory}</td><td style="padding:6px;border-bottom:1px solid #eee">${t.subCategory}</td><td style="padding:6px;border-bottom:1px solid #eee">${formatCurrency(t.amount)}</td>`;
-    tbody.appendChild(tr);
-  });
-  table.appendChild(tbody);
-  tmp.appendChild(table);
-  
-  document.body.appendChild(tmp);
-  // capture chart and tmp
   try {
-    const chartCanvas = chartEl.querySelector('canvas');
-    // capture chart image and tmp area
-    const chartImage = await html2canvas(chartCanvas, { scale:2 });
-    const tmpImage = await html2canvas(tmp, { scale:2 });
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF('p','pt','a4');
-    // add tmpImage (summary + table)
-    const imgData1 = tmpImage.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'pt', 'a4');
     const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const imgProps = pdf.getImageProperties(imgData1);
-    const ratio = imgProps.width / pageWidth;
-    const imgHeight = imgProps.height / ratio;
-    pdf.addImage(imgData1, 'PNG', 0, 0, pageWidth, imgHeight);
-    // add new page for chart
-    pdf.addPage();
-    const imgData2 = chartImage.toDataURL('image/png');
-    const imgProps2 = pdf.getImageProperties(imgData2);
-    const ratio2 = imgProps2.width / pageWidth;
-    const imgHeight2 = imgProps2.height / ratio2;
-    pdf.addImage(imgData2, 'PNG', 0, 20, pageWidth, imgHeight2);
-    pdf.save(`smartbudget-report-${isoDate(from)}_to_${isoDate(to)}.pdf`);
+
+    // Build printable container
+    const tmp = document.createElement('div');
+    tmp.style.width = "900px";
+    tmp.style.padding = "20px";
+    tmp.style.background = "#ffffff";
+    tmp.style.color = "#000000";
+    tmp.innerHTML = `
+      <h2>SmartBudget Report</h2>
+      <p><strong>From:</strong> ${isoDate(from)} &nbsp;&nbsp; <strong>To:</strong> ${isoDate(to)}</p>
+      <p><strong>Total Income:</strong> ${formatCurrency(income)}<br>
+      <strong>Total Expense:</strong> ${formatCurrency(expense)}<br>
+      <strong>Net Balance:</strong> ${formatCurrency(income - expense)}</p>
+      <br>
+      <table border="1" cellspacing="0" cellpadding="5" style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="border:1px solid #ddd;padding:6px">Date</th>
+            <th style="border:1px solid #ddd;padding:6px">Type</th>
+            <th style="border:1px solid #ddd;padding:6px">Main Category</th>
+            <th style="border:1px solid #ddd;padding:6px">Sub Category</th>
+            <th style="border:1px solid #ddd;padding:6px">Amount</th>
+            <th style="border:1px solid #ddd;padding:6px">Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filtered.map(t => `
+            <tr>
+              <td style="border:1px solid #eee;padding:6px">${new Date(t.dateTime).toLocaleString()}</td>
+              <td style="border:1px solid #eee;padding:6px">${t.type}</td>
+              <td style="border:1px solid #eee;padding:6px">${t.mainCategory}</td>
+              <td style="border:1px solid #eee;padding:6px">${t.subCategory}</td>
+              <td style="border:1px solid #eee;padding:6px">${formatCurrency(t.amount)}</td>
+              <td style="border:1px solid #eee;padding:6px">${t.note || ''}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    document.body.appendChild(tmp);
+
+    // capture as PNG (html2canvas)
+    const canvas = await html2canvas(tmp, { scale: 1.5, backgroundColor: "#ffffff" });
+    document.body.removeChild(tmp);
+
+    // convert to JPEG to avoid addImage issues (JPEG widely supported)
+    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+
+    // fit to A4 width
+    const imgWidth = pageWidth;
+    const imgHeight = canvas.height * (imgWidth / canvas.width);
+
+    pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
+    pdf.save(`SmartBudget_Report_${isoDate(from)}_to_${isoDate(to)}.pdf`);
   } catch (e) {
-    alert('PDF export failed: ' + (e.message || e));
-  } finally {
-    tmp.remove();
+    alert("PDF export failed: " + (e.message || e));
   }
 }
+
 
 /* ---------- UI wiring ---------- */
 document.addEventListener('DOMContentLoaded', () => {
@@ -1048,3 +1071,4 @@ window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settin
 </script>
 </body>
 </html>
+
