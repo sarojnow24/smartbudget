@@ -690,12 +690,7 @@ function renderTransactionsTable(list) {
         <button class="icon-btn" data-id="${tx.id}" title="Delete" style="background:#fff;border-radius:6px;color:#d32f2f;">🗑️</button>
       </td>
     `;
-    // bind actions
-    tr.querySelectorAll('.icon-btn')[0].addEventListener('click', ()=> openEditModal(tx.id));
-    tr.querySelectorAll('.icon-btn')[1].addEventListener('click', ()=> deleteTransaction(tx.id));
-    transactionsTableBody.appendChild(tr);
-  });
-}
+   
 
   /* Render budgets */
 function renderBudgets(range = null) {
@@ -802,7 +797,12 @@ document.getElementById('categoriesList').addEventListener('click', (e) => {
   renderBudgetCategoryChips();
 }
 
-
+ // bind actions
+    tr.querySelectorAll('.icon-btn')[0].addEventListener('click', ()=> openEditModal(tx.id));
+    tr.querySelectorAll('.icon-btn')[1].addEventListener('click', ()=> deleteTransaction(tx.id));
+    transactionsTableBody.appendChild(tr);
+  });
+}
 // Open edit-category modal when user clicks Edit
 document.getElementById('categoriesList').addEventListener('click', (e) => {
   if (e.target.matches('.editCat')) {
@@ -1258,6 +1258,7 @@ window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settin
 </script>
 </body>
 </html>
+
 
 
 
