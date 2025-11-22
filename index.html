@@ -1149,7 +1149,7 @@ function renderDashboard(period = settings.defaultDashboardView || 'today') {
   });
 
   renderTransactionsTable(filtered);
-  renderBudgetsList()({ start, end });
+  renderBudgets({ start, end });
 }
 
 /* Build transactions table (Option C) */
@@ -1198,7 +1198,7 @@ function renderTransactionsTable(list) {
 }
 
   /* Render budgets */
-function renderBudgetsList()(range = null) {
+function renderBudgets(range = null) {
   budgetCardsEl.innerHTML = '';
   budgets.forEach(b => {
     const start = new Date(b.startDate), end = new Date(b.endDate);
@@ -1233,7 +1233,7 @@ function renderBudgetsList()(range = null) {
 }
 
   /* Render settings UI */
-function renderSettings() {
+function renderSettingsUI() {
   // set inputs from settings
   document.getElementById('defaultDashboardView').value = settings.defaultDashboardView || 'today';
   document.getElementById('defaultReportView').value = settings.defaultReportView || 'month';
@@ -1701,11 +1701,4 @@ window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settin
 
 </script>
 
-
-
-
-
-
-
 </body></html>
-
