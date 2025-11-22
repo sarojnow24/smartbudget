@@ -498,7 +498,36 @@
     </div>
 
   </div>
+  
+<!-- Edit Category Modal -->
+<div id="editCategoryModal" style="display:none; position:fixed; left:12px; right:12px; bottom:140px; z-index:1300;">
+  <div style="background:var(--card); padding:12px; border-radius:10px;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <strong>Edit Category</strong>
+      <button id="closeEditCat" class="btn ghost">Close</button>
+    </div>
 
+    <div style="margin-top:8px;">
+      <label class="small">Type</label>
+      <select id="editCatType">
+        <option value="income">Income</option>
+        <option value="expense">Expense</option>
+      </select>
+
+      <label class="small">Name</label>
+      <input id="editCatName" placeholder="Category name">
+
+      <label class="small">Subcategories (comma separated)</label>
+      <input id="editCatSubs" placeholder="sub1, sub2, sub3">
+
+      <div style="margin-top:10px;">
+        <button id="saveEditCat" class="btn">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  
  <!-- Bottom navigation -->
   <nav id="bottomNav">
     <button data-view="dashboard" class="active"><span>🏠</span><div>Dashboard</div></button>
@@ -545,6 +574,8 @@ let categories = storage.get('sb_categories', DEFAULT_CATEGORIES);
 let transactions = storage.get('sb_transactions', []);
 let budgets = storage.get('sb_budgets', []);
 let settings = storage.get('sb_settings', DEFAULT_SETTINGS);
+let editingCategoryId = null;
+
 
   /* DOM refs */
 const totalIncomeEl = document.getElementById('totalIncome');
@@ -767,6 +798,68 @@ document.getElementById('categoriesList').addEventListener('click', (e) => {
   renderBudgetCategoryChips();
 }
 
+
+// Open edit-category modal when user clicks Edit
+document.getElementById('categoriesList').addEventListener('click', (e) => {
+  if (e.target.matches('.editCat')) {
+    const id = e.target.dataset.id;
+    const cat = categories.find(c => c.id === id);
+    if (!cat) return alert('Category not found');
+
+    editingCategoryId = id;
+    document.getElementById('editCatType').value = cat.type || 'expense';
+    document.getElementById('editCatName').value = cat.name || '';
+    document.getElementById('editCatSubs').value = (cat.sub || []).join(',');
+
+    document.getElementById('editCategoryModal').style.display = 'block';
+    return;
+  }
+
+  // existing delete handler (keep it) - example:
+  if (e.target.matches('.delCat')) {
+    const id = e.target.dataset.id;
+    if (confirm('Delete category?')) {
+      categories = categories.filter(c => c.id !== id);
+      saveAll();
+      renderSettings(); // or your function that redraws categories
+    }
+  }
+});
+
+// Close edit-category modal
+document.getElementById('closeEditCat').addEventListener('click', () => {
+  document.getElementById('editCategoryModal').style.display = 'none';
+  editingCategoryId = null;
+});
+
+// Save edited category
+document.getElementById('saveEditCat').addEventListener('click', () => {
+  if (!editingCategoryId) return;
+
+  const cat = categories.find(c => c.id === editingCategoryId);
+  if (!cat) return alert('Category not found');
+
+  const newType = document.getElementById('editCatType').value;
+  const newName = document.getElementById('editCatName').value.trim();
+  const newSubs = document.getElementById('editCatSubs').value.split(',')
+                     .map(s => s.trim()).filter(Boolean);
+
+  if (!newName) { alert('Enter category name'); return; }
+
+  // update object
+  cat.type = newType;
+  cat.name = newName;
+  cat.sub = newSubs;
+
+  saveAll();        // persist to localStorage
+  renderSettings(); // re-render the categories list / settings UI
+
+  document.getElementById('editCategoryModal').style.display = 'none';
+  editingCategoryId = null;
+});
+
+
+  
 /* Budget category chips builder */
 function renderBudgetCategoryChips() {
   const container = document.getElementById('budgetCategoryChips'); container.innerHTML = '';
@@ -1167,6 +1260,7 @@ window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settin
 </script>
 </body>
 </html>
+
 
 
 
