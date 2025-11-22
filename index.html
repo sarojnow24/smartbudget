@@ -1044,10 +1044,11 @@
 
  <!-- Bottom navigation -->
   <nav id="bottomNav">
-    <button data-view="dashboard" class="active"><span>🏠</span><div>Dashboard</div></button>
-    <button data-view="reports"><span>📊</span><div>Reports</div></button>
-    <button data-view="settings" class=""><span>⚙️</span><div>Settings</div></button>
-  </nav>
+  <button data-view="dashboard" class="active"><span>🏠</span><div>Dashboard</div></button>
+  <button data-view="reports"><span>📊</span><div>Reports</div></button>
+  <button data-view="settings" class=""><span>⚙️</span><div>Settings</div></button>
+</nav>
+
 
 <script>
 /* ---------- PWA registration ---------- */
@@ -1097,8 +1098,11 @@ const txCountEl = document.getElementById('txCount');
 const transactionsTableBody = document.getElementById('transactionsTableBody');
 const budgetCardsEl = document.getElementById('budgetCards');
 const periodLabel = document.getElementById('periodLabel');
-const pieCtx = document.getElementById('pieChart').getContext('2d');
+
+// get canvas element (not context) and create chart later when rendering dashboard
+const pieCanvas = document.getElementById('pieChart');
 let pieChart = null;
+
 
 /* Helpers */
 function saveAll() {
@@ -1144,7 +1148,7 @@ function renderDashboard(period = settings.defaultDashboardView || 'today') {
   // Pie chart
   const pieData = [income || 1, expense || 1];
   if (pieChart) pieChart.destroy();
-  pieChart = new Chart(pieCtx, {
+  pieChart = new Chart(pieCanvas.getContext('2d'), {
     type: 'doughnut',
     data: {
       labels: ['Income', 'Expenses'],
@@ -1663,12 +1667,15 @@ document.addEventListener('DOMContentLoaded', () => {
     showView(btn.dataset.view);
   });
 
-  // clicking edit/delete buttons inside transactions table are handled earlier by attaching listeners
-
-  // initial render
+    // initial render — open Dashboard by default on page load
   renderSettingsUI();
-  renderDashboard(settings.defaultDashboardView || 'today');
-});
+  // make dashboard active visually
+  document.querySelectorAll('#bottomNav button').forEach(b=>b.classList.remove('active'));
+  const dashBtn = document.querySelector('#bottomNav button[data-view="dashboard"]');
+  if (dashBtn) dashBtn.classList.add('active');
+  // show dashboard
+  showView('dashboard');
+
 
 /* ---------- Utility functions & helpers ---------- */
 function addCategory(c) { c.id = (c.type + '-' + Date.now()); c.sub = c.sub || []; categories.push(c); saveAll(); renderSettingsUI(); renderCurrentView(); }
@@ -1710,6 +1717,7 @@ window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settin
 </script>
 
 </body></html>
+
 
 
 
