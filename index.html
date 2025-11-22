@@ -530,7 +530,29 @@
     </div>
   </div>
 </div>
+<!-- Edit Category Modal -->
+<div id="editCategoryModal" class="card" 
+     style="display:none; position:fixed; left:12px; right:12px; top:100px; z-index:9999;">
+  <div>
+    <strong>Edit Category</strong>
+    <div style="margin-top:10px;">
+      <label class="small">Type</label>
+      <select id="editCatType">
+        <option value="income">Income</option>
+        <option value="expense">Expense</option>
+      </select>
 
+      <label class="small">Name</label>
+      <input id="editCatName">
+
+      <label class="small">Subcategories (comma separated)</label>
+      <input id="editCatSubs">
+
+      <button id="saveEditCat" style="margin-top:10px;">Save</button>
+      <button id="closeEditCat" style="margin-top:10px;">Cancel</button>
+    </div>
+  </div>
+</div>
   
  <!-- Bottom navigation -->
   <nav id="bottomNav">
@@ -1294,39 +1316,19 @@ function showView(name) {
     else if (rv === 'all') { document.getElementById('reportFrom').value = ''; document.getElementById('reportTo').value = ''; }
     renderReport();
   }
-  if (name === 'settings') renderSettingsUI();
+ if (name === "settings") renderSettings();
+
 }
 
   /* ---------- Expose helpers for debugging if needed ---------- */
 window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settings };
 
 </script>
- <!-- Edit Category Modal -->
-<div id="editCategoryModal" class="card" 
-     style="display:none; position:fixed; left:12px; right:12px; top:100px; z-index:9999;">
-  <div>
-    <strong>Edit Category</strong>
-    <div style="margin-top:10px;">
-      <label class="small">Type</label>
-      <select id="editCatType">
-        <option value="income">Income</option>
-        <option value="expense">Expense</option>
-      </select>
-
-      <label class="small">Name</label>
-      <input id="editCatName">
-
-      <label class="small">Subcategories (comma separated)</label>
-      <input id="editCatSubs">
-
-      <button id="saveEditCat" style="margin-top:10px;">Save</button>
-      <button id="closeEditCat" style="margin-top:10px;">Cancel</button>
-    </div>
-  </div>
-</div>
+ 
 
 </body>
 </html>
+
 
 
 
