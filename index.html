@@ -1,22 +1,22 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<!DOCTYPE html>
+<!-- saved from url=(0041)https://sarojnow24.github.io/smartbudget/ -->
+<html lang="en" data-theme="light" data-qb-installed="true"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>SmartBudget Tracker (Web)</title>
 
   <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="./SmartBudget Tracker (Web)_files/chart.umd.min.js.download"></script>
   <!-- SheetJS (xlsx) -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./SmartBudget Tracker (Web)_files/xlsx.full.min.js.download"></script>
   <!-- FileSaver -->
-  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script src="./SmartBudget Tracker (Web)_files/FileSaver.min.js.download"></script>
   <!-- jsPDF -->
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="./SmartBudget Tracker (Web)_files/jspdf.umd.min.js.download"></script>
   <!-- html2canvas -->
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="./SmartBudget Tracker (Web)_files/html2canvas.min.js.download"></script>
 
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="https://sarojnow24.github.io/smartbudget/manifest.json">
   <meta name="theme-color" content="#1976d2">
   <style>
     :root {
@@ -134,10 +134,6 @@
     width: 100%;
     min-width: 150px;
     }
-    #editCategoryModal {
-     z-index: 5000 !important;
-     position: fixed !important;
-    }
 
 
     /* modal */
@@ -154,18 +150,484 @@
 
     @media (min-width:720px){ .app{ padding:24px; } header h1{ font-size:22px; } .fab{ right:28px; bottom:140px;} }
   </style>
-</head>
+<style type="text/css">.lf-progress {
+  -webkit-appearance: none;
+  -moz-apperance: none;
+  width: 100%;
+  /* margin: 0 10px; */
+  height: 4px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.lf-progress:focus {
+  outline: none;
+  border: none;
+}
+.lf-progress::-moz-range-track {
+  cursor: pointer;
+  background: none;
+  border: none;
+  outline: none;
+}
+.lf-progress::-webkit-slider-thumb {
+  -webkit-appearance: none !important;
+  height: 13px;
+  width: 13px;
+  border: 0;
+  border-radius: 50%;
+  background: #0fccce;
+  cursor: pointer;
+}
+.lf-progress::-moz-range-thumb {
+  -moz-appearance: none !important;
+  height: 13px;
+  width: 13px;
+  border: 0;
+  border-radius: 50%;
+  background: #0fccce;
+  cursor: pointer;
+}
+.lf-progress::-ms-track {
+  width: 100%;
+  height: 3px;
+  cursor: pointer;
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+.lf-progress::-ms-fill-lower {
+  background: #ccc;
+  border-radius: 3px;
+}
+.lf-progress::-ms-fill-upper {
+  background: #ccc;
+  border-radius: 3px;
+}
+.lf-progress::-ms-thumb {
+  border: 0;
+  height: 15px;
+  width: 15px;
+  border-radius: 50%;
+  background: #0fccce;
+  cursor: pointer;
+}
+.lf-progress:focus::-ms-fill-lower {
+  background: #ccc;
+}
+.lf-progress:focus::-ms-fill-upper {
+  background: #ccc;
+}
+.lf-player-container :focus {
+  outline: 0;
+}
+.lf-popover {
+  position: relative;
+}
+
+.lf-popover-content {
+  display: inline-block;
+  position: absolute;
+  opacity: 1;
+  visibility: visible;
+  transform: translate(0, -10px);
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+  transition: all 0.3s cubic-bezier(0.75, -0.02, 0.2, 0.97);
+}
+
+.lf-popover-content.hidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(0, 0px);
+}
+
+.lf-player-btn-container {
+  display: flex;
+  align-items: center;
+}
+.lf-player-btn {
+  cursor: pointer;
+  fill: #999;
+  width: 14px;
+}
+
+.lf-player-btn.active {
+  fill: #555;
+}
+
+.lf-popover {
+  position: relative;
+}
+
+.lf-popover-content {
+  display: inline-block;
+  position: absolute;
+  background-color: #ffffff;
+  opacity: 1;
+
+  transform: translate(0, -10px);
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+  transition: all 0.3s cubic-bezier(0.75, -0.02, 0.2, 0.97);
+  padding: 10px;
+}
+
+.lf-popover-content.hidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(0, 0px);
+}
+
+.lf-arrow {
+  position: absolute;
+  z-index: -1;
+  content: '';
+  bottom: -9px;
+  border-style: solid;
+  border-width: 10px 10px 0px 10px;
+}
+
+.lf-left-align,
+.lf-left-align .lfarrow {
+  left: 0;
+  right: unset;
+}
+
+.lf-right-align,
+.lf-right-align .lf-arrow {
+  right: 0;
+  left: unset;
+}
+
+.lf-text-input {
+  border: 1px #ccc solid;
+  border-radius: 5px;
+  padding: 3px;
+  width: 60px;
+  margin: 0;
+}
+
+.lf-color-picker {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  height: 90px;
+}
+
+.lf-color-selectors {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.lf-color-component {
+  display: flex;
+  flex-direction: row;
+  font-size: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.lf-color-component strong {
+  width: 40px;
+}
+
+.lf-color-component input[type='range'] {
+  margin: 0 0 0 10px;
+}
+
+.lf-color-component input[type='number'] {
+  width: 50px;
+  margin: 0 0 0 10px;
+}
+
+.lf-color-preview {
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 5px;
+}
+
+.lf-preview {
+  height: 60px;
+  width: 60px;
+}
+
+.lf-popover-snapshot {
+  width: 150px;
+}
+.lf-popover-snapshot h5 {
+  margin: 5px 0 10px 0;
+  font-size: 0.75rem;
+}
+.lf-popover-snapshot a {
+  display: block;
+  text-decoration: none;
+}
+.lf-popover-snapshot a:before {
+  content: '⥼';
+  margin-right: 5px;
+}
+.lf-popover-snapshot .lf-note {
+  display: block;
+  margin-top: 10px;
+  color: #999;
+}
+.lf-player-controls > div {
+  margin-right: 5px;
+  margin-left: 5px;
+}
+.lf-player-controls > div:first-child {
+  margin-left: 0px;
+}
+.lf-player-controls > div:last-child {
+  margin-right: 0px;
+}
+</style><style type="text/css">.lf-progress {
+  -webkit-appearance: none;
+  -moz-apperance: none;
+  width: 100%;
+  /* margin: 0 10px; */
+  height: 4px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.lf-progress:focus {
+  outline: none;
+  border: none;
+}
+.lf-progress::-moz-range-track {
+  cursor: pointer;
+  background: none;
+  border: none;
+  outline: none;
+}
+.lf-progress::-webkit-slider-thumb {
+  -webkit-appearance: none !important;
+  height: 13px;
+  width: 13px;
+  border: 0;
+  border-radius: 50%;
+  background: #0fccce;
+  cursor: pointer;
+}
+.lf-progress::-moz-range-thumb {
+  -moz-appearance: none !important;
+  height: 13px;
+  width: 13px;
+  border: 0;
+  border-radius: 50%;
+  background: #0fccce;
+  cursor: pointer;
+}
+.lf-progress::-ms-track {
+  width: 100%;
+  height: 3px;
+  cursor: pointer;
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+.lf-progress::-ms-fill-lower {
+  background: #ccc;
+  border-radius: 3px;
+}
+.lf-progress::-ms-fill-upper {
+  background: #ccc;
+  border-radius: 3px;
+}
+.lf-progress::-ms-thumb {
+  border: 0;
+  height: 15px;
+  width: 15px;
+  border-radius: 50%;
+  background: #0fccce;
+  cursor: pointer;
+}
+.lf-progress:focus::-ms-fill-lower {
+  background: #ccc;
+}
+.lf-progress:focus::-ms-fill-upper {
+  background: #ccc;
+}
+.lf-player-container :focus {
+  outline: 0;
+}
+.lf-popover {
+  position: relative;
+}
+
+.lf-popover-content {
+  display: inline-block;
+  position: absolute;
+  opacity: 1;
+  visibility: visible;
+  transform: translate(0, -10px);
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+  transition: all 0.3s cubic-bezier(0.75, -0.02, 0.2, 0.97);
+}
+
+.lf-popover-content.hidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(0, 0px);
+}
+
+.lf-player-btn-container {
+  display: flex;
+  align-items: center;
+}
+.lf-player-btn {
+  cursor: pointer;
+  fill: #999;
+  width: 14px;
+}
+
+.lf-player-btn.active {
+  fill: #555;
+}
+
+.lf-popover {
+  position: relative;
+}
+
+.lf-popover-content {
+  display: inline-block;
+  position: absolute;
+  background-color: #ffffff;
+  opacity: 1;
+
+  transform: translate(0, -10px);
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+  transition: all 0.3s cubic-bezier(0.75, -0.02, 0.2, 0.97);
+  padding: 10px;
+}
+
+.lf-popover-content.hidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(0, 0px);
+}
+
+.lf-arrow {
+  position: absolute;
+  z-index: -1;
+  content: '';
+  bottom: -9px;
+  border-style: solid;
+  border-width: 10px 10px 0px 10px;
+}
+
+.lf-left-align,
+.lf-left-align .lfarrow {
+  left: 0;
+  right: unset;
+}
+
+.lf-right-align,
+.lf-right-align .lf-arrow {
+  right: 0;
+  left: unset;
+}
+
+.lf-text-input {
+  border: 1px #ccc solid;
+  border-radius: 5px;
+  padding: 3px;
+  width: 60px;
+  margin: 0;
+}
+
+.lf-color-picker {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  height: 90px;
+}
+
+.lf-color-selectors {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.lf-color-component {
+  display: flex;
+  flex-direction: row;
+  font-size: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.lf-color-component strong {
+  width: 40px;
+}
+
+.lf-color-component input[type='range'] {
+  margin: 0 0 0 10px;
+}
+
+.lf-color-component input[type='number'] {
+  width: 50px;
+  margin: 0 0 0 10px;
+}
+
+.lf-color-preview {
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 5px;
+}
+
+.lf-preview {
+  height: 60px;
+  width: 60px;
+}
+
+.lf-popover-snapshot {
+  width: 150px;
+}
+.lf-popover-snapshot h5 {
+  margin: 5px 0 10px 0;
+  font-size: 0.75rem;
+}
+.lf-popover-snapshot a {
+  display: block;
+  text-decoration: none;
+}
+.lf-popover-snapshot a:before {
+  content: '⥼';
+  margin-right: 5px;
+}
+.lf-popover-snapshot .lf-note {
+  display: block;
+  margin-top: 10px;
+  color: #999;
+}
+.lf-player-controls > div {
+  margin-right: 5px;
+  margin-left: 5px;
+}
+.lf-player-controls > div:first-child {
+  margin-left: 0px;
+}
+.lf-player-controls > div:last-child {
+  margin-right: 0px;
+}
+</style></head>
 <body>
 
   <div class="app" id="appRoot">
     <header>
       <h1>SmartBudget Tracker</h1>
-      <div class="small">Track income, expenses & budgets — works offline</div>
+      <div class="small">Track income, expenses &amp; budgets — works offline</div>
     </header>
 
 
      <!-- DASHBOARD -->
-    <div id="dashboardView">
+    <div id="dashboardView" style="display: none;">
       <div class="card">
         <div class="row reportRow">
           <div>
@@ -178,8 +640,8 @@
           </div>
           <div style="text-align:right;">
             <div class="small">Net Balance</div>
-            <div id="netBalance" class="big">$0.00</div>
-            <div class="small" id="periodLabel"></div>
+            <div id="netBalance" class="big">AED850.00</div>
+            <div class="small" id="periodLabel">This month</div>
           </div>
         </div>
       </div>
@@ -187,24 +649,36 @@
       <div class="card grid2">
         <div>
           <div class="small">Total Income</div>
-          <div id="totalIncome" class="big">$0.00</div>
+          <div id="totalIncome" class="big">AED1000.00</div>
         </div>
         <div>
           <div class="small">Total Expenses</div>
-          <div id="totalExpense" class="big" style="color:var(--accent-expense)">$0.00</div>
+          <div id="totalExpense" class="big" style="color:var(--accent-expense)">AED150.00</div>
         </div>
       </div>
 
       <div class="card" id="chartCard">
-        <canvas id="pieChart" style="width:100%;height:200px;"></canvas>
+        <canvas id="pieChart" style="width: 876px; height: 876px; display: block; box-sizing: border-box;" width="876" height="876"></canvas>
       </div>
 
-      <div id="budgetCards"></div>
+      <div id="budgetCards"><div class="card budget-card">
+      <div style="display:flex;justify-content:space-between;">
+        <div><strong>Expense Budget</strong><div class="small">Food</div></div>
+        <div style="text-align:right;"><div class="small">Amount</div><div style="font-weight:700">AED500.00</div></div>
+      </div>
+      <div style="margin-top:8px;">
+        <div class="small">Actual Spent</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="width:75%"><div class="progress"><div class="fill" style="width:30%;background:#F44336"></div></div></div>
+          <div style="width:20%;text-align:right;">30%</div>
+        </div>
+        <div class="small" style="margin-top:6px;">Remaining AED350.00</div>
+      </div></div></div>
 
       <div class="card">
         <div class="row" style="justify-content:space-between; align-items:center;">
           <div><strong>Recent Transactions</strong></div>
-          <div class="small"><span id="txCount">0</span> items</div>
+          <div class="small"><span id="txCount">2</span> items</div>
         </div>
 
         <!-- Table layout (Option C) -->
@@ -221,7 +695,29 @@
               <th style="width:120px">Actions</th>
             </tr>
           </thead>
-          <tbody id="transactionsTableBody"></tbody>
+          <tbody id="transactionsTableBody"><tr><td class="muted">-</td><td><strong>Salary</strong></td><td class="muted">-</td><td class="muted">Category total</td><td>AED0.00</td><td class="muted">-</td><td class="muted">-</td></tr><tr><td class="muted">-</td><td><strong>Food</strong></td><td class="muted">-</td><td class="muted">Category total</td><td>AED150.00</td><td class="muted">-</td><td class="muted">-</td></tr><tr>
+      <td>11/19/2025</td>
+      <td>Salary</td>
+      <td>Regular Salary</td>
+      <td></td>
+      <td style="font-weight:700;color:var(--accent-income)">AED1000.00</td>
+      <td class="muted">INCOME</td>
+      <td>
+        <button class="icon-btn" data-id="tx-1763561208811" title="Edit" style="margin-right:6px;">✏️</button>
+        <button class="icon-btn" data-id="tx-1763561208811" title="Delete" style="background:#fff;border-radius:6px;color:#d32f2f;">🗑️</button>
+      </td>
+    </tr><tr>
+      <td>11/19/2025</td>
+      <td>Food</td>
+      <td>Groceries</td>
+      <td></td>
+      <td style="font-weight:700;color:var(--accent-expense)">AED150.00</td>
+      <td class="muted">EXPENSE</td>
+      <td>
+        <button class="icon-btn" data-id="tx-1763561219836" title="Edit" style="margin-right:6px;">✏️</button>
+        <button class="icon-btn" data-id="tx-1763561219836" title="Delete" style="background:#fff;border-radius:6px;color:#d32f2f;">🗑️</button>
+      </td>
+    </tr></tbody>
            </table>
         </div>
 
@@ -229,8 +725,7 @@
       <button class="fab" id="openAdd" title="Add transaction">+</button>
     </div>
 
-        <div id="editCategoryModal" class="card" 
-         style="display:none; position:fixed; left:12px; right:12px; bottom:140px; z-index:1300;">
+        <div id="editCategoryModal" class="card" style="display:none; position:fixed; left:12px; right:12px; bottom:140px; z-index:1300;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <strong>Edit Category</strong>
         <button id="closeEditCat">Close</button>
@@ -310,7 +805,7 @@
 
 
       <!-- SETTINGS -->
-    <div id="settingsView" style="display:none; padding-bottom:80px;">
+    <div id="settingsView" style="padding-bottom: 80px;">
       <div class="card">
         <strong>App Settings</strong>
         <div class="small">Customize default views, transaction display, categories, theme, currency, and export.</div>
@@ -392,7 +887,43 @@
 
         <div style="margin-top:12px;">
           <strong>Existing Categories</strong>
-          <div id="categoriesList" style="margin-top:8px;"></div>
+          <div id="categoriesList" style="margin-top:8px;"><div><strong style="margin-top:8px">INCOME</strong></div><div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0px;">
+    <div>
+        <div style="font-weight:600">Salary</div>
+        <div class="small">Regular Salary, Bonus, Commission</div>
+    </div>
+    <div style="display:flex; gap:6px;">
+        <button data-id="income-1" class="editCat">Edit</button>
+        <button data-id="income-1" class="delCat">Del</button>
+    </div>
+</div><div><strong style="margin-top:8px">EXPENSE</strong></div><div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0px;">
+    <div>
+        <div style="font-weight:600">Food</div>
+        <div class="small">Groceries, Dining Out, Coffee</div>
+    </div>
+    <div style="display:flex; gap:6px;">
+        <button data-id="expense-1" class="editCat">Edit</button>
+        <button data-id="expense-1" class="delCat">Del</button>
+    </div>
+</div><div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0px;">
+    <div>
+        <div style="font-weight:600">Rent</div>
+        <div class="small">Monthly Rent, Mortgage</div>
+    </div>
+    <div style="display:flex; gap:6px;">
+        <button data-id="expense-2" class="editCat">Edit</button>
+        <button data-id="expense-2" class="delCat">Del</button>
+    </div>
+</div><div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0px;">
+    <div>
+        <div style="font-weight:600">Transport</div>
+        <div class="small">Fuel, Transit, Taxi</div>
+    </div>
+    <div style="display:flex; gap:6px;">
+        <button data-id="expense-3" class="editCat">Edit</button>
+        <button data-id="expense-3" class="delCat">Del</button>
+    </div>
+</div></div>
         </div>
       </div>
 
@@ -406,7 +937,7 @@
             <option value="income">Income</option>
           </select>
           <label class="small">Categories (click chips)</label>
-          <div id="budgetCategoryChips" style="margin-top:6px;"></div>
+          <div id="budgetCategoryChips" style="margin-top:6px;"><span class="chip" data-name="Food">Food</span><span class="chip" data-name="Rent">Rent</span><span class="chip" data-name="Transport">Transport</span></div>
           <label class="small">Amount</label>
           <input id="budgetAmount" type="number" min="0" placeholder="e.g., 500">
           <label class="small">Start Date</label>
@@ -502,63 +1033,12 @@
     </div>
 
   </div>
-  
-<!-- Edit Category Modal -->
-<div id="editCategoryModal" style="display:none; position:fixed; left:12px; right:12px; bottom:140px; z-index:1300;">
-  <div style="background:var(--card); padding:12px; border-radius:10px;">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <strong>Edit Category</strong>
-      <button id="closeEditCat" class="btn ghost">Close</button>
-    </div>
 
-    <div style="margin-top:8px;">
-      <label class="small">Type</label>
-      <select id="editCatType">
-        <option value="income">Income</option>
-        <option value="expense">Expense</option>
-      </select>
-
-      <label class="small">Name</label>
-      <input id="editCatName" placeholder="Category name">
-
-      <label class="small">Subcategories (comma separated)</label>
-      <input id="editCatSubs" placeholder="sub1, sub2, sub3">
-
-      <div style="margin-top:10px;">
-        <button id="saveEditCat" class="btn">Save Changes</button>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- Edit Category Modal -->
-<div id="editCategoryModal" class="card" 
-     style="display:none; position:fixed; left:12px; right:12px; top:100px; z-index:9999;">
-  <div>
-    <strong>Edit Category</strong>
-    <div style="margin-top:10px;">
-      <label class="small">Type</label>
-      <select id="editCatType">
-        <option value="income">Income</option>
-        <option value="expense">Expense</option>
-      </select>
-
-      <label class="small">Name</label>
-      <input id="editCatName">
-
-      <label class="small">Subcategories (comma separated)</label>
-      <input id="editCatSubs">
-
-      <button id="saveEditCat" style="margin-top:10px;">Save</button>
-      <button id="closeEditCat" style="margin-top:10px;">Cancel</button>
-    </div>
-  </div>
-</div>
-  
  <!-- Bottom navigation -->
   <nav id="bottomNav">
-    <button data-view="dashboard" class="active"><span>🏠</span><div>Dashboard</div></button>
+    <button data-view="dashboard" class=""><span>🏠</span><div>Dashboard</div></button>
     <button data-view="reports"><span>📊</span><div>Reports</div></button>
-    <button data-view="settings"><span>⚙️</span><div>Settings</div></button>
+    <button data-view="settings" class="active"><span>⚙️</span><div>Settings</div></button>
   </nav>
 
 <script>
@@ -600,8 +1080,6 @@ let categories = storage.get('sb_categories', DEFAULT_CATEGORIES);
 let transactions = storage.get('sb_transactions', []);
 let budgets = storage.get('sb_budgets', []);
 let settings = storage.get('sb_settings', DEFAULT_SETTINGS);
-let editingCategoryId = null;
-
 
   /* DOM refs */
 const totalIncomeEl = document.getElementById('totalIncome');
@@ -712,7 +1190,12 @@ function renderTransactionsTable(list) {
         <button class="icon-btn" data-id="${tx.id}" title="Delete" style="background:#fff;border-radius:6px;color:#d32f2f;">🗑️</button>
       </td>
     `;
-   
+    // bind actions
+    tr.querySelectorAll('.icon-btn')[0].addEventListener('click', ()=> openEditModal(tx.id));
+    tr.querySelectorAll('.icon-btn')[1].addEventListener('click', ()=> deleteTransaction(tx.id));
+    transactionsTableBody.appendChild(tr);
+  });
+}
 
   /* Render budgets */
 function renderBudgets(range = null) {
@@ -768,24 +1251,29 @@ function renderSettingsUI() {
     categories.filter(c=>c.type===type).forEach(c=>{
       const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.padding='6px 0';
       const hidden = settings.hiddenCategories.includes(c.name);
-     row.innerHTML = `
-  <div>
-    <div style="font-weight:600">${c.name}</div>
-    <div class="small">${c.sub.join(', ')}</div>
-  </div>
-  <button class="delCat" data-id="${c.id}">Del</button>
+      row.innerHTML = `
+    <div>
+        <div style="font-weight:600">${c.name}</div>
+        <div class="small">${(c.sub||[]).join(', ')}</div>
+    </div>
+    <div style="display:flex; gap:6px;">
+        <button data-id="${c.id}" class="editCat">Edit</button>
+        <button data-id="${c.id}" class="delCat">Del</button>
+    </div>
 `;
-
 document.getElementById('categoriesList').addEventListener('click', (e) => {
     // EDIT
     if (e.target.matches('.editCat')) {
         const id = e.target.dataset.id;
         const cat = categories.find(c => c.id === id);
 
+        const newName = prompt("Edit category name:", cat.name);
+        if (!newName) return;
 
-
-
-      
+        const newSubs = prompt(
+            "Edit subcategories (comma separated):",
+            cat.sub.join(',')
+        );
 
         cat.name = newName.trim();
         cat.sub = newSubs.split(',').map(s => s.trim()).filter(Boolean);
@@ -814,68 +1302,6 @@ document.getElementById('categoriesList').addEventListener('click', (e) => {
   renderBudgetCategoryChips();
 }
 
- // bind actions
-    tr.querySelectorAll('.icon-btn')[0].addEventListener('click', ()=> openEditModal(tx.id));
-    tr.querySelectorAll('.icon-btn')[1].addEventListener('click', ()=> deleteTransaction(tx.id));
-    transactionsTableBody.appendChild(tr);
-  });
-}
-// Open edit-category modal when user clicks Edit
-document.getElementById('categoriesList').addEventListener('click', (e) => {
-  if (e.target.matches('.editCat')) {
-    const id = e.target.dataset.id;
-    const cat = categories.find(c => c.id === id);
-    if (!cat) return alert('Category not found');
-
-    editingCategoryId = id;
-    document.getElementById('editCatType').value = cat.type || 'expense';
-    document.getElementById('editCatName').value = cat.name || '';
-    document.getElementById('editCatSubs').value = (cat.sub || []).join(',');
-
-    document.getElementById('editCategoryModal').style.display = 'block';
-    return;
-  }
-
-  // existing delete handler (keep it) - example:
-  if (e.target.matches('.delCat')) {
-    const id = e.target.dataset.id;
-    if (confirm('Delete category?')) {
-      categories = categories.filter(c => c.id !== id);
-      saveAll();
-      renderSettings(); // or your function that redraws categories
-    }
-  }
-});
-
-// Close edit-category modal
-document.getElementById('closeEditCat').addEventListener('click', () => {
-  document.getElementById('editCategoryModal').style.display = 'none';
-  editingCategoryId = null;
-});
-
-
-// Save edited category
-document.getElementById('saveEditCat').addEventListener('click', () => {
-    if (!editingCategoryId) return;
-
-    const cat = categories.find(c => c.id === editingCategoryId);
-    if (!cat) return;
-
-    cat.type = document.getElementById('editCatType').value;
-    cat.name = document.getElementById('editCatName').value.trim();
-    cat.sub = document.getElementById('editCatSubs').value
-               .split(',')
-               .map(s => s.trim())
-               .filter(Boolean);
-
-    saveAll();
-    renderSettings();
-
-    document.getElementById('editCategoryModal').style.display = 'none';
-    editingCategoryId = null;
-});
-
-  
 /* Budget category chips builder */
 function renderBudgetCategoryChips() {
   const container = document.getElementById('budgetCategoryChips'); container.innerHTML = '';
@@ -907,56 +1333,6 @@ function populateTxSubChips(mainName) {
     container.appendChild(chip);
   });
 }
-  let editingCategoryId = null;
-
-
-
-
-  
-// open modal
-document.getElementById('categoriesList').addEventListener('click', e => {
-    if (e.target.classList.contains('editCat')) {
-
-        const id = e.target.dataset.id;
-        const cat = categories.find(c => c.id === id);
-        if (!cat) return;
-
-        editingCategoryId = id;
-
-        document.getElementById('editCatType').value = cat.type;
-        document.getElementById('editCatName').value = cat.name;
-        document.getElementById('editCatSubs').value = (cat.sub || []).join(',');
-
-        document.getElementById('editCategoryModal').style.display = 'block';
-    }
-});
-
-// save changes
-document.getElementById('saveEditCat').addEventListener('click', () => {
-    const cat = categories.find(c => c.id === editingCategoryId);
-    if (!cat) return;
-
-    cat.type = document.getElementById('editCatType').value;
-    cat.name = document.getElementById('editCatName').value.trim();
-    cat.sub = document.getElementById('editCatSubs').value
-        .split(',')
-        .map(s => s.trim())
-        .filter(Boolean);
-
-    saveAll();
-    renderSettings();
-
-    document.getElementById('editCategoryModal').style.display = 'none';
-});
-
-// close modal
-document.getElementById('closeEditCat').addEventListener('click', () => {
-  document.getElementById('editCategoryModal').style.display = 'none';
-});
-
-
-
-  
 
 /* Edit modal chips */
 function populateEditMainChips() {
@@ -1204,7 +1580,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const type = document.getElementById('newCatType').value;
     const name = document.getElementById('newCatName').value.trim();
     const subs = document.getElementById('newCatSubs').value.split(',').map(s=>s.trim()).filter(Boolean);
-        addCategory({ name, type, sub: subs });
+    if (!name) { alert('Enter category name'); return; }
+    addCategory({ name, type, sub: subs });
     document.getElementById('newCatName').value=''; document.getElementById('newCatSubs').value='';
   });
 
@@ -1316,18 +1693,13 @@ function showView(name) {
     else if (rv === 'all') { document.getElementById('reportFrom').value = ''; document.getElementById('reportTo').value = ''; }
     renderReport();
   }
- if (name === "settings") renderSettings();
-
+  if (name === 'settings') renderSettingsUI();
 }
 
   /* ---------- Expose helpers for debugging if needed ---------- */
 window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settings };
 
 </script>
- 
-
-</body>
-</html>
 
 
 
@@ -1335,6 +1707,4 @@ window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settin
 
 
 
-
-
-
+</body></html>
