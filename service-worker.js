@@ -1,9 +1,10 @@
 const CACHE_NAME = "smartbudget-cache-v3";
 
 const urlsToCache = [
-  "./",           // root
-  "./index.html"  // your only real file
-  // No icons added unless they exist
+  "./",                 // root
+  "./index.html",       // main file
+  "./icon-192.png",     // your local icons
+  "./icon-512.png"
 ];
 
 self.addEventListener("install", event => {
@@ -30,12 +31,10 @@ self.addEventListener("activate", event => {
   self.clients.claim();
 });
 
-// Network first, then cache fallback
 self.addEventListener("fetch", event => {
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // Cache a copy of every successful request
         const clone = response.clone();
         caches.open(CACHE_NAME).then(cache => {
           cache.put(event.request, clone);
@@ -43,7 +42,6 @@ self.addEventListener("fetch", event => {
         return response;
       })
       .catch(() => {
-        // Offline fallback
         return caches.match(event.request)
           .then(cached => cached || caches.match("./index.html"));
       })
