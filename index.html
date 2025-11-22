@@ -746,29 +746,24 @@ function renderSettingsUI() {
     categories.filter(c=>c.type===type).forEach(c=>{
       const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.padding='6px 0';
       const hidden = settings.hiddenCategories.includes(c.name);
-      row.innerHTML = `
-    <div>
-        <div style="font-weight:600">${c.name}</div>
-        <div class="small">${(c.sub||[]).join(', ')}</div>
-    </div>
-    <div style="display:flex; gap:6px;">
-        <button data-id="${c.id}" class="editCat">Edit</button>
-        <button data-id="${c.id}" class="delCat">Del</button>
-    </div>
+     row.innerHTML = `
+  <div>
+    <div style="font-weight:600">${c.name}</div>
+    <div class="small">${c.sub.join(', ')}</div>
+  </div>
+  <button class="delCat" data-id="${c.id}">Del</button>
 `;
+
 document.getElementById('categoriesList').addEventListener('click', (e) => {
     // EDIT
     if (e.target.matches('.editCat')) {
         const id = e.target.dataset.id;
         const cat = categories.find(c => c.id === id);
 
-        const newName = prompt("Edit category name:", cat.name);
-        if (!newName) return;
 
-        const newSubs = prompt(
-            "Edit subcategories (comma separated):",
-            cat.sub.join(',')
-        );
+
+
+      
 
         cat.name = newName.trim();
         cat.sub = newSubs.split(',').map(s => s.trim()).filter(Boolean);
@@ -890,6 +885,56 @@ function populateTxSubChips(mainName) {
     container.appendChild(chip);
   });
 }
+  let editingCategoryId = null;
+
+
+
+
+  
+// open modal
+document.getElementById('categoriesList').addEventListener('click', e => {
+    if (e.target.classList.contains('editCat')) {
+
+        const id = e.target.dataset.id;
+        const cat = categories.find(c => c.id === id);
+        if (!cat) return;
+
+        editingCategoryId = id;
+
+        document.getElementById('editCatType').value = cat.type;
+        document.getElementById('editCatName').value = cat.name;
+        document.getElementById('editCatSubs').value = (cat.sub || []).join(',');
+
+        document.getElementById('editCategoryModal').style.display = 'block';
+    }
+});
+
+// save changes
+document.getElementById('saveEditCat').addEventListener('click', () => {
+    const cat = categories.find(c => c.id === editingCategoryId);
+    if (!cat) return;
+
+    cat.type = document.getElementById('editCatType').value;
+    cat.name = document.getElementById('editCatName').value.trim();
+    cat.sub = document.getElementById('editCatSubs').value
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+
+    saveAll();
+    renderSettings();
+
+    document.getElementById('editCategoryModal').style.display = 'none';
+});
+
+// close modal
+document.getElementById('closeEditCat').addEventListener('click', () => {
+  document.getElementById('editCategoryModal').style.display = 'none';
+});
+
+
+
+  
 
 /* Edit modal chips */
 function populateEditMainChips() {
@@ -1256,8 +1301,33 @@ function showView(name) {
 window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settings };
 
 </script>
+ <!-- Edit Category Modal -->
+<div id="editCategoryModal" class="card" 
+     style="display:none; position:fixed; left:12px; right:12px; top:100px; z-index:9999;">
+  <div>
+    <strong>Edit Category</strong>
+    <div style="margin-top:10px;">
+      <label class="small">Type</label>
+      <select id="editCatType">
+        <option value="income">Income</option>
+        <option value="expense">Expense</option>
+      </select>
+
+      <label class="small">Name</label>
+      <input id="editCatName">
+
+      <label class="small">Subcategories (comma separated)</label>
+      <input id="editCatSubs">
+
+      <button id="saveEditCat" style="margin-top:10px;">Save</button>
+      <button id="closeEditCat" style="margin-top:10px;">Cancel</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
+
 
 
 
