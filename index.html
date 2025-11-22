@@ -138,6 +138,9 @@
     width: 100% !important;
     height: 260px !important;
     }
+    /* make chart responsive + center within card */
+    #chartCard { display:flex; justify-content:center; align-items:center; }
+    #chartCard canvas { width: 100% !important; max-width: 420px; height: 260px !important; box-sizing: border-box; }
 
 
     /* modal */
@@ -662,7 +665,8 @@
       </div>
 
       <div class="card" id="chartCard">
-        <canvas id="pieChart"></canvas>
+        <canvas id="pieChart" style="width: 876px; height: 876px; display: block; box-sizing: border-box;" width="876" height="876"></canvas>
+
       </div>
 
       <div id="budgetCards"><div class="card budget-card">
@@ -1706,6 +1710,7 @@ window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settin
 </script>
 
 </body></html>
+
 
 
 
