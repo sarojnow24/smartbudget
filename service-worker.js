@@ -1,21 +1,17 @@
-const CACHE_NAME = "smartbudget-cache-v2";
+const CACHE_NAME = "smartbudget-cache-v3";
 
 const urlsToCache = [
-  "/", 
-  "/index.html",
-
-  // icons
-  "/icon-192.png",
-  "/icon-512.png",
-  "/favicon.png",
-
-  // external libraries cached dynamically
+  "./",           // root
+  "./index.html"  // your only real file
+  // No icons added unless they exist
 ];
 
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       return cache.addAll(urlsToCache);
+    }).catch(err => {
+      console.error("Cache addAll failed:", err);
     })
   );
   self.skipWaiting();
@@ -34,22 +30,22 @@ self.addEventListener("activate", event => {
   self.clients.claim();
 });
 
-// Network falling back to cache (best for dynamic scripts/CDNs)
+// Network first, then cache fallback
 self.addEventListener("fetch", event => {
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // Save a copy to cache for offline use
-        const respClone = response.clone();
+        // Cache a copy of every successful request
+        const clone = response.clone();
         caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, respClone);
+          cache.put(event.request, clone);
         });
         return response;
       })
       .catch(() => {
         // Offline fallback
         return caches.match(event.request)
-          .then(cached => cached || caches.match("/index.html"));
+          .then(cached => cached || caches.match("./index.html"));
       })
   );
 });
