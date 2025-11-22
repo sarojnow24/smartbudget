@@ -6,15 +6,17 @@
   <title>SmartBudget Tracker (Web)</title>
 
   <!-- Chart.js -->
-  <script src="./SmartBudget Tracker (Web)_files/chart.umd.min.js.download"></script>
-  <!-- SheetJS (xlsx) -->
-  <script src="./SmartBudget Tracker (Web)_files/xlsx.full.min.js.download"></script>
-  <!-- FileSaver -->
-  <script src="./SmartBudget Tracker (Web)_files/FileSaver.min.js.download"></script>
-  <!-- jsPDF -->
-  <script src="./SmartBudget Tracker (Web)_files/jspdf.umd.min.js.download"></script>
-  <!-- html2canvas -->
-  <script src="./SmartBudget Tracker (Web)_files/html2canvas.min.js.download"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- html2canvas -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- XLSX -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 
   <link rel="manifest" href="https://sarojnow24.github.io/smartbudget/manifest.json">
   <meta name="theme-color" content="#1976d2">
@@ -1525,29 +1527,47 @@ async function exportReportToPDF(dataObj) {
 
 /* ---------- UI wiring ---------- */
 document.addEventListener('DOMContentLoaded', () => {
+
   // apply theme
   applyTheme(settings.theme || 'light');
 
   // populate default report dates (last week)
   document.getElementById('reportTo').value = isoDate(today);
-  const weekStart = new Date(); weekStart.setDate(today.getDate() - 6);
+  const weekStart = new Date(); 
+  weekStart.setDate(today.getDate() - 6);
   document.getElementById('reportFrom').value = isoDate(weekStart);
 
-  // Populate UI initial
-  document.querySelectorAll('.periodBtn').forEach(b => b.addEventListener('click', ev => renderDashboard(ev.currentTarget.dataset.period)));
+  // PERIOD BUTTONS
+  document.querySelectorAll('.periodBtn').forEach(b => 
+    b.addEventListener('click', ev => renderDashboard(ev.currentTarget.dataset.period))
+  );
+
+  // OPEN ADD TRANSACTION
   document.getElementById('openAdd').addEventListener('click', ()=> {
     document.getElementById('addForm').style.display = 'block';
     document.getElementById('addFormTitle').textContent = 'Add Transaction';
-    const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate()-7);
+
+    const sevenDaysAgo = new Date(); 
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
     document.getElementById('txDate').min = isoDate(sevenDaysAgo);
     document.getElementById('txDate').max = isoDate(new Date());
     document.getElementById('txDate').value = isoDate(new Date());
     document.getElementById('txTime').value = new Date().toTimeString().slice(0,5);
+
     populateTxMainChips();
   });
-  document.getElementById('closeForm').addEventListener('click', ()=> document.getElementById('addForm').style.display='none');
+
+  // CLOSE TRANSACTION FORM
+  document.getElementById('closeForm').addEventListener('click', ()=> 
+    document.getElementById('addForm').style.display='none'
+  );
+
   document.getElementById('txType').addEventListener('change', populateTxMainChips);
+
+  // SAVE TRANSACTION
   document.getElementById('saveTx').addEventListener('click', ()=> {
+
     const type = document.getElementById('txType').value;
     const amount = parseFloat(document.getElementById('txAmount').value);
     const main = Array.from(document.querySelectorAll('#txMainChips .chip.active')).map(n=>n.dataset.name)[0];
@@ -1555,18 +1575,44 @@ document.addEventListener('DOMContentLoaded', () => {
     const note = document.getElementById('txNote').value.trim();
     const date = document.getElementById('txDate').value;
     const time = document.getElementById('txTime').value || '00:00';
+
     if (!main) { alert('Select main category'); return; }
     if (!sub) { alert('Select subcategory'); return; }
     if (!amount || amount <= 0) { alert('Enter valid amount'); return; }
+
     const sel = new Date(date + 'T' + time + ':00');
-    const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7); sevenDaysAgo.setHours(0,0,0,0);
+    const sevenDaysAgo = new Date(); 
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7); 
+    sevenDaysAgo.setHours(0,0,0,0);
+
     if (sel < sevenDaysAgo) { alert('You can only select dates up to 7 days in the past'); return; }
     if (sel > new Date()) { alert('Cannot select future date'); return; }
-    addTransactionObj({ type, mainCategory: main, subCategory: sub, amount, note, dateTime: sel.toISOString() });
+
+    addTransactionObj({ 
+      type, 
+      mainCategory: main, 
+      subCategory: sub, 
+      amount, 
+      note, 
+      dateTime: sel.toISOString() 
+    });
+
+    // Close modal
     document.getElementById('addForm').style.display='none';
-    document.getElementById('txAmount').value=''; document.getElementById('txNote').value='';
+
+    // Clear fields
+    document.getElementById('txAmount').value='';
+    document.getElementById('txNote').value='';
+
+    // Remove active chips
+    document.querySelectorAll('#txMainChips .chip.active').forEach(n=>n.classList.remove('active'));
+    document.querySelectorAll('#txSubChips .chip.active').forEach(n=>n.classList.remove('active'));
+
+    showView('dashboard');
   });
 
+}); 
+  
 // edit modal wiring
   document.getElementById('closeEdit').addEventListener('click', ()=> document.getElementById('editForm').style.display='none');
   document.getElementById('editTxType').addEventListener('change', populateEditMainChips);
@@ -1717,6 +1763,7 @@ window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settin
 </script>
 
 </body></html>
+
 
 
 
