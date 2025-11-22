@@ -600,6 +600,12 @@
 a[href*="github.com"] {
     display: none !important;
 }
+  /* Hide GitHub link injected by PWABuilder */
+a[href*="github.com"], 
+div.github-link, 
+.header a[href*="github.com"] {
+    display: none !important;
+}
   
 .lf-popover-snapshot {
   width: 150px;
@@ -1823,9 +1829,16 @@ if ("serviceWorker" in navigator) {
     .catch(err => console.log("Service Worker registration failed:", err));
 }
 </script>
+  <script>
+document.addEventListener("DOMContentLoaded", () => {
+    const githubLinks = document.querySelectorAll('a[href*="github.com"], .github-link');
+    githubLinks.forEach(el => el.remove());
+});
+</script>
 
 
 </body></html>
+
 
 
 
