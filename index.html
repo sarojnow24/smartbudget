@@ -130,6 +130,11 @@
     body {
     padding-bottom: 90px !important;
     }
+    #reportType {
+    width: 100%;
+    min-width: 150px;
+    }
+
 
     /* modal */
     .modal {
@@ -218,6 +223,32 @@
 
       </div>
       <button class="fab" id="openAdd" title="Add transaction">+</button>
+    </div>
+
+        <div id="editCategoryModal" class="card" 
+         style="display:none; position:fixed; left:12px; right:12px; bottom:140px; z-index:1300;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong>Edit Category</strong>
+        <button id="closeEditCat">Close</button>
+      </div>
+    
+      <div style="margin-top:8px;">
+        <label class="small">Type</label>
+        <select id="editCatType">
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+        </select>
+    
+        <label class="small">Name</label>
+        <input id="editCatName">
+    
+        <label class="small">Subcategories (comma separated)</label>
+        <input id="editCatSubs">
+    
+        <div style="margin-top:8px;">
+          <button id="saveEditCat">Save Changes</button>
+        </div>
+      </div>
     </div>
 
 
@@ -1136,6 +1167,7 @@ window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settin
 </script>
 </body>
 </html>
+
 
 
 
