@@ -1275,44 +1275,27 @@ function renderSettingsUI() {
         <button data-id="${c.id}" class="delCat">Del</button>
     </div>
 `;
+document.getElementById('categoriesList').addEventListener('click', (e) => {
+    // EDIT
+    if (e.target.matches('.editCat')) {
+        const id = e.target.dataset.id;
+        const cat = categories.find(c => c.id === id);
 
-document.getElementById("saveEditCat").addEventListener("click", () => {
-    const id = document.getElementById("editCategoryModal").dataset.editId;
-    const cat = categories.find(c => c.id === id);
-    if (!cat) return;
+        const newName = prompt("Edit category name:", cat.name);
+        if (!newName) return;
 
-    const newType = document.getElementById("editCatType").value;
-    const newName = document.getElementById("editCatName").value.trim();
-    const newSubs = document.getElementById("editCatSubs").value
-                      .split(",")
-                      .map(s => s.trim())
-                      .filter(Boolean);
+        const newSubs = prompt(
+            "Edit subcategories (comma separated):",
+            cat.sub.join(',')
+        );
 
-    if (!newName) { alert("Enter category name"); return; }
+        cat.name = newName.trim();
+        cat.sub = newSubs.split(',').map(s => s.trim()).filter(Boolean);
 
-    // Update
-    cat.type = newType;
-    cat.name = newName;
-    cat.sub = newSubs;
-
-    saveAll();
-    renderSettingsUI();
-    renderCurrentView();
-
-    // Close modal
-    document.getElementById("editCategoryModal").style.display = "none";
-});
-
-
-
-      
-    
-        // Close modal
-
-    document.getElementById("closeEditCat").addEventListener("click", () => {
-        document.getElementById("editCategoryModal").style.display = "none";
-    });
-
+        saveAll();
+        renderSettings();
+        return;
+    }
 
     // DELETE
     if (e.target.matches('.delCat')) {
@@ -1780,10 +1763,3 @@ window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settin
 </script>
 
 </body></html>
-
-
-
-
-
-
-
