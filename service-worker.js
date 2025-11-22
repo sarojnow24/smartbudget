@@ -1,9 +1,10 @@
-const CACHE_NAME = "smartbudget-cache-v4";
+const CACHE_NAME = "smartbudget-cache-v5";
 
 const urlsToCache = [
-  "./",                 // root
-  "./index.html",       // your main app file
-  "./icon-192.png",     // your icons in the same folder
+  "./",
+  "./index.html",
+  "./offline.html",
+  "./icon-192.png",
   "./icon-512.png"
 ];
 
@@ -71,3 +72,4 @@ self.addEventListener("fetch", event => {
       })
   );
 });
+
