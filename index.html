@@ -107,6 +107,31 @@
     -webkit-overflow-scrolling: touch;
     width: 100%;
     }
+    #txList > div {
+    width: 100%;
+    box-sizing: border-box;
+    }
+    #txList .row {
+    flex-wrap: wrap;
+    }
+
+    #reportsView .row {
+    flex-wrap: wrap;
+    }
+    #reportsView button {
+    width: 100%;
+    margin-top: 8px;
+    }
+    .reportRow {
+      flex-wrap: wrap;
+    }
+    
+    .reportRow > div {
+      width: 100%;
+    }
+    body {
+    padding-bottom: 90px !important;
+    }
 
     /* modal */
     .modal {
@@ -135,7 +160,7 @@
      <!-- DASHBOARD -->
     <div id="dashboardView">
       <div class="card">
-        <div class="row" style="justify-content:space-between; align-items:center;">
+        <div class="row reportRow">
           <div>
             <div class="small">Period</div>
             <div style="display:flex; gap:6px; margin-top:6px;">
@@ -662,7 +687,49 @@ function renderSettingsUI() {
     categories.filter(c=>c.type===type).forEach(c=>{
       const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.padding='6px 0';
       const hidden = settings.hiddenCategories.includes(c.name);
-      row.innerHTML = `<div><div style="font-weight:600">${c.name} ${hidden?'<span class="muted">(hidden)</span>':''}</div><div class="small">${(c.sub||[]).join(', ')}</div></div><div><button data-id="${c.id}" class="toggleCat">${hidden? 'Show' : 'Hide'}</button> <button data-id="${c.id}" class="delCat">Del</button></div>`;
+      row.innerHTML = `
+    <div>
+        <div style="font-weight:600">${c.name}</div>
+        <div class="small">${(c.sub||[]).join(', ')}</div>
+    </div>
+    <div style="display:flex; gap:6px;">
+        <button data-id="${c.id}" class="editCat">Edit</button>
+        <button data-id="${c.id}" class="delCat">Del</button>
+    </div>
+`;
+document.getElementById('categoriesList').addEventListener('click', (e) => {
+    // EDIT
+    if (e.target.matches('.editCat')) {
+        const id = e.target.dataset.id;
+        const cat = categories.find(c => c.id === id);
+
+        const newName = prompt("Edit category name:", cat.name);
+        if (!newName) return;
+
+        const newSubs = prompt(
+            "Edit subcategories (comma separated):",
+            cat.sub.join(',')
+        );
+
+        cat.name = newName.trim();
+        cat.sub = newSubs.split(',').map(s => s.trim()).filter(Boolean);
+
+        saveAll();
+        renderSettings();
+        return;
+    }
+
+    // DELETE
+    if (e.target.matches('.delCat')) {
+        const id = e.target.dataset.id;
+        if (confirm('Delete category?')) {
+            categories = categories.filter(c => c.id !== id);
+            saveAll();
+            renderSettings();
+        }
+    }
+});
+
       categoriesList.appendChild(row);
     });
   });
@@ -1071,5 +1138,6 @@ window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settin
 </script>
 </body>
 </html>
+
 
 
