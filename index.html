@@ -134,6 +134,10 @@
     width: 100%;
     min-width: 150px;
     }
+    #editCategoryModal {
+     z-index: 5000 !important;
+     position: fixed !important;
+    }
 
 
     /* modal */
@@ -832,32 +836,27 @@ document.getElementById('closeEditCat').addEventListener('click', () => {
   editingCategoryId = null;
 });
 
+
 // Save edited category
 document.getElementById('saveEditCat').addEventListener('click', () => {
-  if (!editingCategoryId) return;
+    if (!editingCategoryId) return;
 
-  const cat = categories.find(c => c.id === editingCategoryId);
-  if (!cat) return alert('Category not found');
+    const cat = categories.find(c => c.id === editingCategoryId);
+    if (!cat) return;
 
-  const newType = document.getElementById('editCatType').value;
-  const newName = document.getElementById('editCatName').value.trim();
-  const newSubs = document.getElementById('editCatSubs').value.split(',')
-                     .map(s => s.trim()).filter(Boolean);
+    cat.type = document.getElementById('editCatType').value;
+    cat.name = document.getElementById('editCatName').value.trim();
+    cat.sub = document.getElementById('editCatSubs').value
+               .split(',')
+               .map(s => s.trim())
+               .filter(Boolean);
 
-  if (!newName) { alert('Enter category name'); return; }
+    saveAll();
+    renderSettings();
 
-  // update object
-  cat.type = newType;
-  cat.name = newName;
-  cat.sub = newSubs;
-
-  saveAll();        // persist to localStorage
-  renderSettings(); // re-render the categories list / settings UI
-
-  document.getElementById('editCategoryModal').style.display = 'none';
-  editingCategoryId = null;
+    document.getElementById('editCategoryModal').style.display = 'none';
+    editingCategoryId = null;
 });
-
 
   
 /* Budget category chips builder */
@@ -1138,8 +1137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const type = document.getElementById('newCatType').value;
     const name = document.getElementById('newCatName').value.trim();
     const subs = document.getElementById('newCatSubs').value.split(',').map(s=>s.trim()).filter(Boolean);
-    if (!name) { alert('Enter category name'); return; }
-    addCategory({ name, type, sub: subs });
+        addCategory({ name, type, sub: subs });
     document.getElementById('newCatName').value=''; document.getElementById('newCatSubs').value='';
   });
 
@@ -1260,6 +1258,7 @@ window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settin
 </script>
 </body>
 </html>
+
 
 
 
