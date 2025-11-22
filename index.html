@@ -1277,25 +1277,24 @@ function renderSettingsUI() {
 `;
 document.getElementById('categoriesList').addEventListener('click', (e) => {
     // EDIT
+
     if (e.target.matches('.editCat')) {
-        const id = e.target.dataset.id;
-        const cat = categories.find(c => c.id === id);
+      const id = e.target.dataset.id;
+      const cat = categories.find(c => c.id === id);
+      if (!cat) return;
+  
+      // Fill modal fields
+      document.getElementById('editCatType').value = cat.type;
+      document.getElementById('editCatName').value = cat.name;
+      document.getElementById('editCatSubs').value = cat.sub.join(',');
+  
+      // Store id temporarily
+      document.getElementById('editCategoryModal').dataset.editingId = id;
+  
+      // Show modal
+      document.getElementById('editCategoryModal').style.display = 'block';
+  }
 
-        const newName = prompt("Edit category name:", cat.name);
-        if (!newName) return;
-
-        const newSubs = prompt(
-            "Edit subcategories (comma separated):",
-            cat.sub.join(',')
-        );
-
-        cat.name = newName.trim();
-        cat.sub = newSubs.split(',').map(s => s.trim()).filter(Boolean);
-
-        saveAll();
-        renderSettings();
-        return;
-    }
 
     // DELETE
     if (e.target.matches('.delCat')) {
@@ -1721,7 +1720,57 @@ document.addEventListener('DOMContentLoaded', () => {
   if (dashBtn) dashBtn.classList.add('active');
   // show dashboard
   showView('dashboard');
+// -------------------- CATEGORY EDIT MODAL --------------------
+document.getElementById('categoriesList').addEventListener('click', e => {
+  if (!e.target.matches('.editCat')) return;
 
+  const id = e.target.dataset.id;
+  const cat = categories.find(c => c.id === id);
+  if (!cat) return;
+
+  // Fill modal inputs
+  document.getElementById('editCatType').value = cat.type;
+  document.getElementById('editCatName').value = cat.name;
+  document.getElementById('editCatSubs').value = cat.sub.join(',');
+
+  // Save id for later
+  document.getElementById('editCategoryModal').dataset.editingId = id;
+
+  // Show modal
+  document.getElementById('editCategoryModal').style.display = 'block';
+});
+
+// Close button
+document.getElementById('closeEditCat').addEventListener('click', () => {
+  document.getElementById('editCategoryModal').style.display = 'none';
+});
+
+// Save button
+document.getElementById('saveEditCat').addEventListener('click', () => {
+  const modal = document.getElementById('editCategoryModal');
+  const id = modal.dataset.editingId;
+  const cat = categories.find(c => c.id === id);
+  if (!cat) return;
+
+  // Update category
+  cat.type = document.getElementById('editCatType').value;
+  cat.name = document.getElementById('editCatName').value.trim();
+  cat.sub = document.getElementById('editCatSubs').value
+              .split(',')
+              .map(s => s.trim())
+              .filter(Boolean);
+
+  saveAll();
+
+  // Close modal
+  modal.style.display = 'none';
+
+  // Refresh
+  renderSettingsUI();
+  renderCurrentView();
+});
+
+  
 
 /* ---------- Utility functions & helpers ---------- */
 function addCategory(c) { c.id = (c.type + '-' + Date.now()); c.sub = c.sub || []; categories.push(c); saveAll(); renderSettingsUI(); renderCurrentView(); }
@@ -1763,3 +1812,4 @@ window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settin
 </script>
 
 </body></html>
+
