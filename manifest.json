@@ -1,36 +1,36 @@
 {
-  "id": "./index.html",
+  "id": "/smartbudget/",
   "name": "SmartBudget",
   "short_name": "SmartBudget",
   "description": "SmartBudget helps you track income and expenses easily, providing reports and budgeting tools.",
-  "start_url": "./index.html",
-  "scope": "./",
+  "start_url": "/smartbudget/",
+  "scope": "/smartbudget/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4CAF50",
   "orientation": "portrait",
-
   "icons": [
     {
-      "src": "./icon-192.png",
+      "src": "/smartbudget/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "./icon-512.png",
+      "src": "/smartbudget/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
-
   "screenshots": [
     {
-      "src": "./screenshot1.png",
+      "src": "/smartbudget/screenshot1.png",
       "sizes": "540x720",
       "type": "image/png"
     },
     {
-      "src": "./screenshot2.png",
+      "src": "/smartbudget/screenshot2.png",
       "sizes": "540x720",
       "type": "image/png"
     }
