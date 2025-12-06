@@ -1,4 +1,4 @@
-const CACHE_NAME = "smartbudget-cache-v5";
+const CACHE_NAME = "smartbudget-cache-v6";
 
 const urlsToCache = [
   "./",
@@ -71,4 +71,5 @@ self.addEventListener("message", event => {
     self.skipWaiting();
   }
 });
+
 
