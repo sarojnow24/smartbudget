@@ -1056,6 +1056,36 @@ div.github-link,
 
   </div>
 
+  <!-- Update Popup -->
+<div id="update-popup" 
+     style="display:none; position: fixed; top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+            align-items: center; justify-content: center; z-index: 9999;">
+  
+  <div style="background: white; padding: 20px; width: 80%; max-width: 320px;
+              text-align: center; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+
+    <h3 style="margin-top: 0; color: #333;">New update available</h3>
+    <p style="color:#555; font-size: 14px;">Click below to update your app.</p>
+
+    <button id="update-now-btn"
+            style="width: 100%; padding:10px; margin-top: 12px;
+                   background:#4CAF50; color:white; border:none;
+                   border-radius:8px; font-size:16px;">
+      Update Now
+    </button>
+
+    <button id="update-later-btn"
+            style="width: 100%; padding:10px; margin-top: 8px;
+                   background:#ccc; color:#333; border:none;
+                   border-radius:8px; font-size:14px;">
+      Later
+    </button>
+
+  </div>
+</div>
+
+
  <!-- Bottom navigation -->
   <nav id="bottomNav">
   <button data-view="dashboard" class="active"><span>🏠</span><div>Dashboard</div></button>
@@ -1836,8 +1866,41 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
+  <script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js').then(reg => {
+
+    reg.addEventListener('updatefound', () => {
+      const newSW = reg.installing;
+
+      newSW.addEventListener('statechange', () => {
+        if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+
+          // Show popup
+          document.getElementById("update-popup").style.display = "flex";
+
+          // Update Now button
+          document.getElementById("update-now-btn").onclick = () => {
+            newSW.postMessage({ type: "SKIP_WAITING" });
+            window.location.reload();
+          };
+
+          // Later button
+          document.getElementById("update-later-btn").onclick = () => {
+            document.getElementById("update-popup").style.display = "none";
+          };
+
+        }
+      });
+    });
+
+  });
+}
+</script>
+
 
 </body></html>
+
 
 
 
