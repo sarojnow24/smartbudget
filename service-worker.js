@@ -1,3 +1,4 @@
+// Change version number on each release
 const CACHE_NAME = "smartbudget-cache-v6";
 
 const urlsToCache = [
@@ -8,7 +9,7 @@ const urlsToCache = [
   "./icon-512.png"
 ];
 
-// INSTALL — Pre-cache essential files
+// Install - Pre-cache basic files
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)).catch(()=>{})
@@ -16,60 +17,50 @@ self.addEventListener("install", event => {
   self.skipWaiting();
 });
 
-// ACTIVATE — Delete old caches
+// Activate - remove old caches
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.map(key => {
-        if (key !== CACHE_NAME) {
-          return caches.delete(key);
-        }
-      }))
+      Promise.all(keys.map(k => k !== CACHE_NAME ? caches.delete(k) : null))
     )
   );
   self.clients.claim();
 });
 
-// FETCH — Network-first strategy
+// Fetch handler
 self.addEventListener("fetch", event => {
-  const url = event.request && event.request.url ? event.request.url : "";
+  const url = event.request?.url || "";
 
   if (!url.startsWith("http")) return;
 
-  // Navigation (page loads)
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
         .then(response => {
           if (response && response.status === 200) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone).catch(()=>{}));
+            caches.open(CACHE_NAME).then(c=>c.put(event.request, response.clone()).catch(()=>{}));
           }
           return response;
         })
-        .catch(() =>
-          caches.match(event.request).then(cached => cached || caches.match("./offline.html"))
-        )
+        .catch(()=>caches.match("./offline.html"))
     );
     return;
   }
 
-  // Other requests: network-first, fallback to cache
+  // Other requests
   event.respondWith(
-    fetch(event.request)
+    caches.match(event.request).then(cached => cached || fetch(event.request)
       .then(response => {
-        if (!response || response.status !== 200) return response;
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone).catch(()=>{}));
+        if (response && response.status === 200) {
+          caches.open(CACHE_NAME).then(c=>c.put(event.request, response.clone()).catch(()=>{}));
+        }
         return response;
-      })
-      .catch(() => caches.match(event.request).then(cached => cached))
+      }).catch(()=>cached)
+    )
   );
 });
+
+// Listen to skipWaiting messages
 self.addEventListener("message", event => {
-  if (event.data && event.data.type === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
-
-
