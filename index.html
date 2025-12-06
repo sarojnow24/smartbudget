@@ -1094,6 +1094,22 @@ div.github-link,
 </nav>
 
 
+  <!-- Stylish Update Toast -->
+<div id="update-toast" style="position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+     background: #4CAF50; color: white; padding: 16px 24px; border-radius: 12px;
+     box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-family: sans-serif; font-size: 15px;
+     display: flex; align-items: center; justify-content: space-between; min-width: 280px;
+     max-width: 320px; z-index: 9999; transition: bottom 0.5s ease, opacity 0.5s ease; opacity: 0;">
+  <span>New update available!</span>
+  <button id="update-toast-btn" 
+          style="margin-left: 16px; background:white; color:#4CAF50; border:none; 
+                 padding:6px 12px; border-radius:8px; font-weight: bold; cursor:pointer;">
+    Update
+  </button>
+</div>
+
+
+
 <script>
 /* ---------- PWA registration ---------- */
 if ('serviceWorker' in navigator) {
@@ -1898,8 +1914,46 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
+  <script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js').then(reg => {
+
+    reg.addEventListener('updatefound', () => {
+      const newSW = reg.installing;
+
+      newSW.addEventListener('statechange', () => {
+        if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+
+          const toast = document.getElementById("update-toast");
+          const btn = document.getElementById("update-toast-btn");
+
+          // Show toast
+          toast.style.bottom = "30px";
+          toast.style.opacity = "1";
+
+          // Auto hide after 15s if user does not click
+          const hideTimeout = setTimeout(() => {
+            toast.style.bottom = "-100px";
+            toast.style.opacity = "0";
+          }, 15000);
+
+          // Update button click
+          btn.onclick = () => {
+            newSW.postMessage({ type: "SKIP_WAITING" });
+            window.location.reload();
+          };
+
+        }
+      });
+    });
+
+  });
+}
+</script>
+
 
 </body></html>
+
 
 
 
