@@ -8,15 +8,35 @@ const urlsToCache = [
   "./icon-512.png"
 ];
 
-// INSTALL — Pre-cache basic files
+// INSTALL — Pre-cache essential files
+self.addEventListener("install", event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)).catch(()=>{})
+  );
+  self.skipWaiting();
+});
 
+// ACTIVATE — Delete old caches
+self.addEventListener("activate", event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.map(key => {
+        if (key !== CACHE_NAME) {
+          return caches.delete(key);
+        }
+      }))
+    )
+  );
+  self.clients.claim();
+});
+
+// FETCH — Network-first strategy
 self.addEventListener("fetch", event => {
   const url = event.request && event.request.url ? event.request.url : "";
 
-  // Ignore non-http(s) requests (chrome-extension etc.)
   if (!url.startsWith("http")) return;
 
-  // Network-first for navigation (page load)
+  // Navigation (page loads)
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
@@ -27,12 +47,14 @@ self.addEventListener("fetch", event => {
           }
           return response;
         })
-        .catch(() => caches.match(event.request).then(cached => cached || caches.match("./offline.html")))
+        .catch(() =>
+          caches.match(event.request).then(cached => cached || caches.match("./offline.html"))
+        )
     );
     return;
   }
 
-  // Network-first for other requests (scripts, images, etc.)
+  // Other requests: network-first, fallback to cache
   event.respondWith(
     fetch(event.request)
       .then(response => {
@@ -44,5 +66,3 @@ self.addEventListener("fetch", event => {
       .catch(() => caches.match(event.request).then(cached => cached))
   );
 });
-
-
