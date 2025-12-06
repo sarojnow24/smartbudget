@@ -1108,6 +1108,33 @@ div.github-link,
   </button>
 </div>
 
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const newSW = reg.installing;
+      newSW.addEventListener('statechange', () => {
+        if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+          const toast = document.getElementById("update-toast");
+          const btn = document.getElementById("update-toast-btn");
+          toast.style.bottom = "30px";
+          toast.style.opacity = "1";
+          const hideTimeout = setTimeout(() => {
+            toast.style.bottom = "-100px";
+            toast.style.opacity = "0";
+          }, 15000);
+          btn.onclick = () => {
+            newSW.postMessage({ type: "SKIP_WAITING" });
+            window.location.reload();
+          };
+        }
+      });
+    });
+  });
+}
+</script>
+
+
 
 
 <script>
@@ -1953,6 +1980,7 @@ if ('serviceWorker' in navigator) {
 
 
 </body></html>
+
 
 
 
