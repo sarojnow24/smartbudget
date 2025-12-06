@@ -1,4 +1,4 @@
-// Change version number on each release
+// Change this when releasing a new version
 const CACHE_NAME = "smartbudget-cache-v6";
 
 const urlsToCache = [
@@ -9,15 +9,15 @@ const urlsToCache = [
   "./icon-512.png"
 ];
 
-// Install - Pre-cache basic files
+// Install
 self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)).catch(()=>{})
+    caches.open(CACHE_NAME).then(c => c.addAll(urlsToCache)).catch(()=>{})
   );
   self.skipWaiting();
 });
 
-// Activate - remove old caches
+// Activate
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -30,7 +30,6 @@ self.addEventListener("activate", event => {
 // Fetch handler
 self.addEventListener("fetch", event => {
   const url = event.request?.url || "";
-
   if (!url.startsWith("http")) return;
 
   if (event.request.mode === 'navigate') {
@@ -47,7 +46,6 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // Other requests
   event.respondWith(
     caches.match(event.request).then(cached => cached || fetch(event.request)
       .then(response => {
@@ -60,7 +58,7 @@ self.addEventListener("fetch", event => {
   );
 });
 
-// Listen to skipWaiting messages
+// Skip waiting
 self.addEventListener("message", event => {
   if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
