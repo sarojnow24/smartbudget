@@ -22,17 +22,5 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ],
-  "screenshots": [
-    {
-      "src": "/smartbudget/screenshot1.png",
-      "sizes": "540x720",
-      "type": "image/png"
-    },
-    {
-      "src": "/smartbudget/screenshot2.png",
-      "sizes": "540x720",
-      "type": "image/png"
-    }
   ]
 }
