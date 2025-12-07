@@ -1,18 +1,18 @@
 // ----------------- Version and Cache Name -----------------
-const APP_VERSION = "1.0.0"; // Change this when releasing a new version
+const APP_VERSION = "1.0.0"; // Update this on new releases
 const CACHE_NAME = `smartbudget-cache-v${APP_VERSION}`;
 
 // ----------------- Files to Cache -----------------
 const urlsToCache = [
-  "./",
-  "/smartbudget/?source=pwa",
-  "./index.html",
-  "./offline.html",
-  "./icon-192.png",
-  "./icon-512.png"
+  "/smartbudget/",               // root
+  "/smartbudget/index.html",
+  "/smartbudget/offline.html",
+  "/smartbudget/icon-192.png",
+  "/smartbudget/icon-512.png"
+  "/smartbudget/manifest.json"
 ];
 
-// ----------------- Install -----------------
+// ----------------- Install Event -----------------
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -22,7 +22,7 @@ self.addEventListener("install", event => {
   self.skipWaiting();
 });
 
-// ----------------- Activate -----------------
+// ----------------- Activate Event -----------------
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -39,7 +39,7 @@ self.addEventListener("fetch", event => {
   const url = event.request?.url || "";
   if (!url.startsWith("http")) return;
 
-  // Handle page navigation requests (HTML pages)
+  // Handle page navigation (HTML)
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
@@ -49,12 +49,12 @@ self.addEventListener("fetch", event => {
           }
           return response;
         })
-        .catch(() => caches.match("./offline.html"))
+        .catch(() => caches.match("/smartbudget/offline.html"))
     );
     return;
   }
 
-  // Handle other requests (JS, CSS, images, icons)
+  // Handle other resources (JS, CSS, images, icons)
   event.respondWith(
     caches.match(event.request).then(cached => {
       return cached || fetch(event.request).then(response => {
