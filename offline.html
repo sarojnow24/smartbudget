@@ -3,21 +3,57 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Offline - SmartBudget</title>
+<title>SmartBudget Offline</title>
 <style>
   body {
     margin: 0;
     padding: 40px;
     font-family: Arial, sans-serif;
     background: #fafafa;
+    color: #333;
     text-align: center;
   }
-  h1 { color: #4CAF50; }
-  p { color: #333; }
+  h1 {
+    color: #4CAF50;
+    font-size: 2rem;
+    margin-bottom: 10px;
+  }
+  p {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+  }
+  button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  button:hover {
+    background-color: #45a049;
+  }
 </style>
 </head>
 <body>
   <h1>You are Offline</h1>
-  <p>The app is running in offline mode. Some features may be unavailable.</p>
+  <p>Some features may not be available. You can continue using the app.</p>
+  <button id="go-online-btn">Retry Connection</button>
+
+  <script>
+    const btn = document.getElementById('go-online-btn');
+    btn.addEventListener('click', () => {
+      if (navigator.onLine) {
+        location.reload();
+      } else {
+        alert("Still offline! Please check your internet connection.");
+      }
+    });
+
+    // Optional: automatically reload when back online
+    window.addEventListener('online', () => location.reload());
+  </script>
 </body>
 </html>
