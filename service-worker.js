@@ -1,21 +1,23 @@
 const APP_VERSION = "1.0.0"; 
 const CACHE_NAME = `smartbudget-cache-v${APP_VERSION}`;
 
-// Add all files from your GitHub repo here
+// Full list of files in your GitHub repo
 const contentToCache = [
   "./",
   "./index.html",
   "./offline.html",
   "./icon-192.png",
   "./icon-512.png",
-  "./main.js",     // your main JS file
-  "./style.css",   // your CSS file
+  "./main.js",         // Add this if you have a main JS
+  "./style.css",       // Add this if you have a CSS file
+  "./manifest.json",
   "./screenshot1.png",
-  "./screenshot2.png"
-  // Add more files here if you have other assets
+  "./screenshot2.png",
+  "./well-known/assetlinks.json"
+  // Add more assets if you have others like fonts, images, icons
 ];
 
-// Install: cache app shell
+// Install: cache all files
 self.addEventListener("install", (event) => {
   console.log("[SW] Install");
   event.waitUntil(
