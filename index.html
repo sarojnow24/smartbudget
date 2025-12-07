@@ -1254,6 +1254,27 @@ function renderDashboard(period = settings.defaultDashboardView || 'today') {
   renderBudgets({ start, end });
 }
 
+// ===== IndexedDB Setup for Offline Sync =====
+let db;
+const request = indexedDB.open('SmartBudgetDB', 1);
+
+request.onupgradeneeded = (event) => {
+  db = event.target.result;
+  if (!db.objectStoreNames.contains('syncTransactions')) {
+    db.createObjectStore('syncTransactions', { keyPath: 'id', autoIncrement: true });
+  }
+};
+
+request.onsuccess = (event) => {
+  db = event.target.result;
+  console.log('IndexedDB ready for sync');
+};
+
+request.onerror = (event) => {
+  console.error('IndexedDB error:', event.target.errorCode);
+};
+
+  
 /* Build transactions table (Option C) */
 function renderTransactionsTable(list) {
   transactionsTableBody.innerHTML = '';
@@ -1897,6 +1918,45 @@ function showView(name) {
   /* ---------- Expose helpers for debugging if needed ---------- */
 window.appHelpers = { addCategory, addTransactionObj, addBudget, saveAll, settings };
 
+
+
+  window.addEventListener('online', () => {
+  console.log('Back online! Syncing pending transactions...');
+  syncPendingTransactions();
+});
+
+function syncPendingTransactions() {
+  if (!db) return;
+
+  const transaction = db.transaction(['syncTransactions'], 'readonly');
+  const store = transaction.objectStore('syncTransactions');
+  store.getAll().onsuccess = async (event) => {
+    const allTx = event.target.result;
+    for (let tx of allTx) {
+      if (!tx.synced) {
+        try {
+          // Replace this URL with your server API
+          const response = await fetch('https://yourserver.com/api/addTransaction', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(tx)
+          });
+
+          if (response.ok) {
+            // Mark as synced
+            const writeTx = db.transaction(['syncTransactions'], 'readwrite').objectStore('syncTransactions');
+            tx.synced = true;
+            writeTx.put(tx);
+          }
+        } catch (err) {
+          console.log('Sync failed, will retry later.', err);
+        }
+      }
+    }
+  };
+}
+
+
 </script>
  <script>
 if ("serviceWorker" in navigator) {
@@ -2021,6 +2081,7 @@ if ('serviceWorker' in navigator) {
   
 
 </body></html>
+
 
 
 
