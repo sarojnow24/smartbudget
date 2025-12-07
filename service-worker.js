@@ -1,23 +1,27 @@
-const APP_VERSION = "1.0.0"; // Update for each release
+const APP_VERSION = "1.0.0"; 
 const CACHE_NAME = `smartbudget-cache-v${APP_VERSION}`;
 
+// Add all files from your GitHub repo here
 const contentToCache = [
   "./",
   "./index.html",
   "./offline.html",
   "./icon-192.png",
   "./icon-512.png",
-  "./main.js",   // include your main JS
-  "./style.css"  // include your CSS
+  "./main.js",     // your main JS file
+  "./style.css",   // your CSS file
+  "./screenshot1.png",
+  "./screenshot2.png"
+  // Add more files here if you have other assets
 ];
 
 // Install: cache app shell
 self.addEventListener("install", (event) => {
-  console.log("[Service Worker] Install");
+  console.log("[SW] Install");
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE_NAME);
-      console.log("[Service Worker] Caching app shell and content");
+      console.log("[SW] Caching app shell & content");
       await cache.addAll(contentToCache);
     })()
   );
@@ -26,13 +30,13 @@ self.addEventListener("install", (event) => {
 
 // Activate: remove old caches
 self.addEventListener("activate", (event) => {
-  console.log("[Service Worker] Activate");
+  console.log("[SW] Activate");
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
-            console.log("[Service Worker] Deleting old cache:", key);
+            console.log("[SW] Deleting old cache:", key);
             return caches.delete(key);
           }
         })
@@ -42,7 +46,7 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Fetch: serve cached content, fetch & cache new content
+// Fetch: serve cached content, fallback to offline
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
@@ -50,22 +54,14 @@ self.addEventListener("fetch", (event) => {
     (async () => {
       const cachedResponse = await caches.match(event.request);
       if (cachedResponse) {
-        // Serve from cache
-        console.log("[Service Worker] Serving from cache:", event.request.url);
         return cachedResponse;
       }
-
       try {
-        // Fetch from network
         const response = await fetch(event.request);
-        // Cache the new response for next time
         const cache = await caches.open(CACHE_NAME);
         cache.put(event.request, response.clone());
-        console.log("[Service Worker] Fetched & cached:", event.request.url);
         return response;
       } catch (err) {
-        // Offline fallback
-        console.log("[Service Worker] Offline fallback:", event.request.url);
         if (event.request.mode === "navigate") {
           return caches.match("./offline.html");
         }
