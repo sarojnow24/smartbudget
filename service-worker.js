@@ -1,73 +1,49 @@
-// ----------------- Version and Cache Name -----------------
-const APP_VERSION = "1.0.0"; // Update this on new releases
-const CACHE_NAME = `smartbudget-cache-v${APP_VERSION}`;
+// ----------------- PWABuilder Offline Service Worker -----------------
+const CACHE = "smartbudget-offline-v1";
+const offlineFallbackPage = "/smartbudget/offline.html";
 
-// ----------------- Files to Cache -----------------
-const urlsToCache = [
-  "/smartbudget/",               // root
-  "/smartbudget/index.html",
-  "/smartbudget/offline.html",
-  "/smartbudget/icon-192.png",
-  "/smartbudget/icon-512.png"
-  "/smartbudget/manifest.json"
-];
+importScripts('https://storage.googleapis.com/workbox-cdn/releases/5.1.2/workbox-sw.js');
 
-// ----------------- Install Event -----------------
-self.addEventListener("install", event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
-      .catch(() => {})
-  );
-  self.skipWaiting();
-});
-
-// ----------------- Activate Event -----------------
-self.addEventListener("activate", event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.map(key => key !== CACHE_NAME ? caches.delete(key) : null)
-      )
-    )
-  );
-  self.clients.claim();
-});
-
-// ----------------- Fetch Handler -----------------
-self.addEventListener("fetch", event => {
-  const url = event.request?.url || "";
-  if (!url.startsWith("http")) return;
-
-  // Handle page navigation (HTML)
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          if (response && response.status === 200) {
-            caches.open(CACHE_NAME).then(c => c.put(event.request, response.clone()).catch(()=>{}));
-          }
-          return response;
-        })
-        .catch(() => caches.match("/smartbudget/offline.html"))
-    );
-    return;
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
   }
+});
 
-  // Handle other resources (JS, CSS, images, icons)
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).then(response => {
-        if (response && response.status === 200) {
-          caches.open(CACHE_NAME).then(c => c.put(event.request, response.clone()).catch(()=>{}));
-        }
-        return response;
-      }).catch(() => cached);
-    })
+self.addEventListener('install', async (event) => {
+  event.waitUntil(
+    caches.open(CACHE)
+      .then((cache) => cache.add(offlineFallbackPage))
   );
 });
 
-// ----------------- Skip Waiting for Updates -----------------
-self.addEventListener("message", event => {
-  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
+if (workbox.navigationPreload.isSupported()) {
+  workbox.navigationPreload.enable();
+}
+
+workbox.routing.registerRoute(
+  new RegExp('/smartbudget/.*'),
+  new workbox.strategies.StaleWhileRevalidate({
+    cacheName: CACHE
+  })
+);
+
+self.addEventListener('fetch', (event) => {
+  if (event.request.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        const preloadResp = await event.preloadResponse;
+        if (preloadResp) {
+          return preloadResp;
+        }
+
+        const networkResp = await fetch(event.request);
+        return networkResp;
+      } catch (error) {
+        const cache = await caches.open(CACHE);
+        const cachedResp = await cache.match(offlineFallbackPage);
+        return cachedResp;
+      }
+    })());
+  }
 });
