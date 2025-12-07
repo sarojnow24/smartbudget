@@ -34,5 +34,12 @@
       "sizes": "540x720",
       "type": "image/png"
     }
-  ]
+  ],
+  "related_applications": [
+    {
+      "platform": "play",
+      "id": "io.github.sarojnow24.twa"
+    }
+  ],
+  "prefer_related_applications": false
 }
